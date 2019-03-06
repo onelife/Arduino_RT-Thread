@@ -13,7 +13,7 @@
  * 2013-07-09   aozima      enhancement hard fault exception handler.
  */
 
-#include <rtthread.h>
+#include "include/rtthread.h"
 
 struct exception_stack_frame
 {

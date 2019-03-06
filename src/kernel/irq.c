@@ -11,8 +11,8 @@
  * 2018-11-22     Jesven       rt_interrupt_get_nest function add disable irq
  */
 
-#include <rthw.h>
-#include <rtthread.h>
+#include "include/rthw.h"
+#include "include/rtthread.h"
 
 #ifdef RT_USING_HOOK
 

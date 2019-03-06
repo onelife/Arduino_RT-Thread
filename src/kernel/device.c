@@ -14,7 +14,7 @@
  * 2016-04-02     Bernard      fix the open_flag initialization issue.
  */
 
-#include <rtthread.h>
+#include "include/rtthread.h"
 #if defined(RT_USING_POSIX)
 #include <rtdevice.h> /* for wqueue_init */
 #endif

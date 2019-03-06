@@ -28,8 +28,8 @@
  *                             add support for tasks bound to cpu
  */
 
-#include <rthw.h>
-#include <rtthread.h>
+#include "include/rthw.h"
+#include "include/rtthread.h"
 
 extern rt_list_t rt_thread_defunct;
 

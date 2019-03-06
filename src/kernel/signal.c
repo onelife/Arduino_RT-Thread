@@ -13,8 +13,8 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <rthw.h>
-#include <rtthread.h>
+#include "include/rthw.h"
+#include "include/rtthread.h"
 
 #ifdef RT_USING_SIGNALS
 

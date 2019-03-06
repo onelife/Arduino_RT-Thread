@@ -19,8 +19,8 @@
  * 2013-07-15     Grissiom     optimize rt_memheap_realloc
  */
 
-#include <rthw.h>
-#include <rtthread.h>
+#include "include/rthw.h"
+#include "include/rtthread.h"
 
 #ifdef RT_USING_MEMHEAP
 

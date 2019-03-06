@@ -1,0 +1,52 @@
+#include <rtt.h>
+
+struct rt_thread blink_thread;
+byte blink_thread_stack[1024];
+bool led_state = false;
+
+// user thread entry function
+void blink_thread_entry(void* parameter) {
+  rt_kprintf("Start blink_thread\n");
+
+  // the loop is here
+  while (true) {
+    led_state = !led_state;
+    digitalWrite(LED_BUILTIN, led_state ? HIGH : LOW);
+    rt_kprintf("Sleep for 1 second\n");
+    rt_thread_sleep(RT_TICK_PER_SECOND);
+  }
+}
+
+// RT-Thread function called by "RT_T.begin()"
+void rt_application_init(void) {
+  rt_kprintf("Call rt_application_init");
+
+  // statically initialize user thread
+  if (RT_EOK != rt_thread_init(
+      &blink_thread,              // [in/out] thread descriptor
+      "blink",                    // [in] thread name
+      blink_thread_entry,         // [in] thread entry function
+      RT_NULL,                    // [in] thread parameter (for entry function)
+      blink_thread_stack,         // [in] thread stack
+      sizeof(blink_thread_stack), // [in] thread stack size
+      10,                         // [in] thread priority
+      20)) {                      // [in] thread ticks
+    rt_kprintf("Failed to initialize user thread!\n");
+  } else {
+    // start user thread
+    rt_thread_startup(&blink_thread);
+  }
+}
+
+void setup() {
+  pinMode(LED_BUILTIN, OUTPUT);
+  Serial.begin(9600);
+  while (!Serial);
+  Serial.println("Start RT-Thread");
+  RT_T.begin();
+}
+
+// this function is not called
+void loop() {
+  // no code should be here
+}

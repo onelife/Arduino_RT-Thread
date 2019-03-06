@@ -8,7 +8,7 @@
  * 2008-07-29     Bernard      first version from QiuYi implementation
  */
 
-#include <rtthread.h>
+#include "include/rtthread.h"
 
 void rt_hw_show_memory(rt_uint32_t addr, rt_uint32_t size)
 {

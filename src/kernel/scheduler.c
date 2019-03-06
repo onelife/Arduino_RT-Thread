@@ -30,8 +30,8 @@
  *
  */
 
-#include <rtthread.h>
-#include <rthw.h>
+#include "include/rtthread.h"
+#include "include/rthw.h"
 
 #ifdef RT_USING_SMP
 rt_hw_spinlock_t _rt_critical_lock;
@@ -357,7 +357,7 @@ void rt_schedule(void)
                 RT_DEBUG_LOG(RT_DEBUG_SCHEDULER,
                         ("[%d]switch to priority#%d "
                          "thread:%.*s(sp:0x%08x), "
-                         "from thread:%.*s(sp: 0x%08x)\n",
+                         "from thread:%.*s(sp:0x%08x)\n",
                          pcpu->irq_nest, highest_ready_priority,
                          RT_NAME_MAX, to_thread->name, to_thread->sp,
                          RT_NAME_MAX, current_thread->name, current_thread->sp));
@@ -450,7 +450,7 @@ void rt_schedule(void)
                 RT_DEBUG_LOG(RT_DEBUG_SCHEDULER,
                         ("[%d]switch to priority#%d "
                          "thread:%.*s(sp:0x%08x), "
-                         "from thread:%.*s(sp: 0x%08x)\n",
+                         "from thread:%.*s(sp:0x%08x)\n",
                          rt_interrupt_nest, highest_ready_priority,
                          RT_NAME_MAX, to_thread->name, to_thread->sp,
                          RT_NAME_MAX, from_thread->name, from_thread->sp));

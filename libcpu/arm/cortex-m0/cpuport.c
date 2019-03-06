@@ -11,7 +11,7 @@
  * 2012-12-23     aozima       stack addr align to 8byte.
  */
 
-#include <rtthread.h>
+#include "include/rtthread.h"
 
 struct exception_stack_frame
 {

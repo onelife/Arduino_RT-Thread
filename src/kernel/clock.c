@@ -15,8 +15,8 @@
  * 2018-11-22     Jesven       add per cpu tick
  */
 
-#include <rthw.h>
-#include <rtthread.h>
+#include "include/rthw.h"
+#include "include/rtthread.h"
 
 #ifdef RT_USING_SMP
 #define rt_tick rt_cpu_index(0)->tick

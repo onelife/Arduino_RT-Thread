@@ -15,8 +15,8 @@
  * 2018-01-25     Bernard      Fix the object find issue when enable MODULE.
  */
 
-#include <rtthread.h>
-#include <rthw.h>
+#include "include/rtthread.h"
+#include "include/rthw.h"
 
 #ifdef RT_USING_MODULE
 #include <dlmodule.h>

@@ -41,6 +41,8 @@
 
 #define S_ISDIR(m)           (((m) & S_IFMT) == S_IFDIR)
 
+#elif defined(CONFIG_ARDUINO)
+
 #else
 #define S_IFMT               00170000
 #define S_IFSOCK             0140000

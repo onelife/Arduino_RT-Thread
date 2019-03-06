@@ -8,8 +8,8 @@
  * 2018-10-30     Bernard      The first version
  */
 
-#include <rtthread.h>
-#include <rthw.h>
+#include "include/rtthread.h"
+#include "include/rthw.h"
 
 #ifdef RT_USING_SMP
 

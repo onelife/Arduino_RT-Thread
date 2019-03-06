@@ -19,11 +19,11 @@
 #ifndef __RT_THREAD_H__
 #define __RT_THREAD_H__
 
-#include <rtconfig.h>
-#include <rtdebug.h>
-#include <rtdef.h>
-#include <rtservice.h>
-#include <rtm.h>
+#include "rtconfig.h"
+#include "rtdebug.h"
+#include "rtdef.h"
+#include "rtservice.h"
+#include "rtm.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -143,6 +143,7 @@ rt_err_t rt_thread_control(rt_thread_t thread, int cmd, void *arg);
 rt_err_t rt_thread_suspend(rt_thread_t thread);
 rt_err_t rt_thread_resume(rt_thread_t thread);
 void rt_thread_timeout(void *parameter);
+rt_err_t rt_thread_sleep(rt_tick_t tick);
 
 #ifdef RT_USING_SIGNALS
 void rt_thread_alloc_sig(rt_thread_t tid);

@@ -17,8 +17,8 @@
  * 2018-11-22     Jesven       Add secondary cpu boot up
  */
 
-#include <rthw.h>
-#include <rtthread.h>
+#include "include/rthw.h"
+#include "include/rtthread.h"
 
 #ifdef RT_USING_USER_MAIN
 #ifndef RT_MAIN_THREAD_STACK_SIZE

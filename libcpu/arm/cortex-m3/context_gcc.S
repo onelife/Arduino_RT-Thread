@@ -12,7 +12,7 @@
  * 2013-06-18   aozima    add restore MSP feature.
  * 2013-07-09   aozima    enhancement hard fault exception handler.
  */
- 
+
     .cpu    cortex-m3
     .fpu    softvfp
     .syntax unified
@@ -25,25 +25,6 @@
     
     .equ    SHPR3, 0xE000ED20               /* system priority register (3) */
     .equ    PENDSV_PRI_LOWEST, 0x00FF0000   /* PendSV priority value (lowest) */
-
-/*
- * rt_base_t rt_hw_interrupt_disable();
- */
-    .global rt_hw_interrupt_disable
-    .type rt_hw_interrupt_disable, %function
-rt_hw_interrupt_disable:
-    MRS     R0, PRIMASK
-    CPSID   I
-    BX      LR
-
-/*
- * void rt_hw_interrupt_enable(rt_base_t level);
- */
-    .global rt_hw_interrupt_enable
-    .type rt_hw_interrupt_enable, %function
-rt_hw_interrupt_enable:
-    MSR     PRIMASK, R0
-    BX      LR
 
 /*
  * void rt_hw_context_switch(rt_uint32 from, rt_uint32 to);
@@ -80,9 +61,9 @@ _reswitch:
  * R1 --> switch to thread stack
  * psr, pc, LR, R12, R3, R2, R1, R0 are pushed into [from] stack
  */
-    .global PendSV_Handler
-    .type PendSV_Handler, %function
-PendSV_Handler:
+    .global pendSVHook
+    .type pendSVHook, %function
+pendSVHook:
     /* disable interrupt to protect context switch */
     MRS     R2, PRIMASK
     CPSID   I

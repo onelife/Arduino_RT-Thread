@@ -35,8 +35,8 @@
  * 2018-10-02     Bernard      add 64bit support for mailbox
  */
 
-#include <rtthread.h>
-#include <rthw.h>
+#include "include/rtthread.h"
+#include "include/rthw.h"
 
 #ifdef RT_USING_HOOK
 extern void (*rt_object_trytake_hook)(struct rt_object *object);

@@ -1,0 +1,84 @@
+#######################################
+# Syntax Coloring Map For RT-Thread
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+rt_int8_t					KEYWORD1
+rt_int16_t					KEYWORD1
+rt_int32_t					KEYWORD1
+rt_uint8_t					KEYWORD1
+rt_uint16_t					KEYWORD1
+rt_uint32_t					KEYWORD1
+rt_bool_t					KEYWORD1
+rt_base_t					KEYWORD1
+rt_ubase_t					KEYWORD1
+rt_err_t					KEYWORD1
+rt_time_t					KEYWORD1
+rt_tick_t					KEYWORD1
+rt_flag_t					KEYWORD1
+rt_size_t					KEYWORD1
+rt_dev_t					KEYWORD1
+rt_off_t					KEYWORD1
+rt_thread					KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+rt_hw_board_init			KEYWORD2
+rt_application_init			KEYWORD2
+
+#######################################
+# Kernel Service
+#######################################
+rt_kprintf					KEYWORD2
+rt_show_version				KEYWORD2
+
+#######################################
+# Interrupt
+#######################################
+rt_hw_interrupt_disable		KEYWORD2
+rt_hw_interrupt_enable		KEYWORD2
+
+#######################################
+# Thread
+#######################################
+rt_thread_init				KEYWORD2
+rt_thread_detach			KEYWORD2
+rt_thread_create			KEYWORD2
+rt_thread_self				KEYWORD2
+rt_thread_find				KEYWORD2
+rt_thread_startup			KEYWORD2
+rt_thread_delete			KEYWORD2
+rt_thread_yield				KEYWORD2
+rt_thread_mdelay			KEYWORD2
+rt_thread_control			KEYWORD2
+rt_thread_suspend			KEYWORD2
+rt_thread_resume			KEYWORD2
+rt_thread_timeout			KEYWORD2
+rt_thread_sleep				KEYWORD2
+
+#######################################
+# Instances (KEYWORD2)
+#######################################
+RT_T		KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+CONFIG_HEAP_SIZE			LITERAL1
+CONFIG_PRIORITY_MAX			LITERAL1
+CONFIG_KERNEL_PRIORITY		LITERAL1
+CONFIG_NO_CONSOLE			LITERAL1
+RT_EOK						LITERAL1
+RT_ERROR					LITERAL1
+RT_ETIMEOUT					LITERAL1
+RT_EFULL					LITERAL1
+RT_EEMPTY					LITERAL1
+RT_ENOMEM					LITERAL1
+RT_ENOSYS					LITERAL1
+RT_EBUSY					LITERAL1
+RT_EIO						LITERAL1
+RT_EINTR					LITERAL1
+RT_EINVAL					LITERAL1

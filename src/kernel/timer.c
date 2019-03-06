@@ -18,8 +18,8 @@
  *                             timeout function.
  */
 
-#include <rtthread.h>
-#include <rthw.h>
+#include "include/rtthread.h"
+#include "include/rthw.h"
 
 /* hard timer list */
 static rt_list_t rt_timer_list[RT_TIMER_SKIP_LIST_LEVEL];

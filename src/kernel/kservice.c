@@ -19,8 +19,8 @@
  * 2015-07-06     Bernard      Add rt_assert_handler routine.
  */
 
-#include <rtthread.h>
-#include <rthw.h>
+#include "include/rtthread.h"
+#include "include/rthw.h"
 
 #ifdef RT_USING_MODULE
 #include <dlmodule.h>
