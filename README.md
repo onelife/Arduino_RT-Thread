@@ -12,4 +12,5 @@ Currently only the kernel APIs are avaiable and most of the optional components 
 
 ## Known Issues ##
 * Native USB port is not working currently.
+
   So for Arduino Due, please connect to host with the "Programming Port"; and for "Arduino MKRZero", please avoid using "Serial" and "rt_kprintf" (by insert `#define CONFIG_NO_CONSOLE` before `#include <rtt.h>`).
