@@ -20,7 +20,7 @@
 
 #if CONFIG_USING_FINSH
 extern "C" {
-    #include "components\finsh\shell.h"
+    #include "components/finsh/shell.h"
 }
 #endif
 

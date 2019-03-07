@@ -8,7 +8,7 @@
  * 2010-03-22     Bernard      first version
  */
  
-#include "include\rtthread.h"
+#include "include/rtthread.h"
 
 #ifdef RT_USING_FINSH
 

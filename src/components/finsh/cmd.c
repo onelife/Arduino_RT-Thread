@@ -31,8 +31,8 @@
  *                             Provide protection for the "first layer of objects" when list_*
  */
 
-#include "include\rthw.h"
-#include "include\rtthread.h"
+#include "include/rthw.h"
+#include "include/rtthread.h"
 
 #ifdef RT_USING_FINSH
 

@@ -10,7 +10,7 @@
 #ifndef __FINSH_H__
 #define __FINSH_H__
 
-#include "include\rtthread.h"
+#include "include/rtthread.h"
 #include "finsh_api.h"
 
 /* -- the beginning of option -- */

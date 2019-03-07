@@ -8,7 +8,7 @@
  * 2015-09-25     Bernard      the first verion for FinSH
  */
 
-#include "include\rtthread.h"
+#include "include/rtthread.h"
 
 #if defined(FINSH_USING_MSH) && defined(RT_USING_DFS)
 

@@ -920,7 +920,7 @@ void rt_memory_info(rt_uint32_t *total,
 }
 
 #ifdef RT_USING_FINSH
-#include "components\finsh\finsh.h"
+#include "components/finsh/finsh.h"
 
 void list_mem(void)
 {

@@ -9,7 +9,7 @@
  * 2015-08-28     Bernard      Add mkfs command.
  */
 
-#include "include\rtthread.h"
+#include "include/rtthread.h"
 
 #ifdef FINSH_USING_MSH
 

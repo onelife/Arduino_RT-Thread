@@ -9,7 +9,7 @@
  * 2014-01-03     Bernard      msh can execute module.
  * 2017-07-19     Aubr.Cool    limit argc to RT_FINSH_ARG_MAX
  */
-#include "include\rtthread.h"
+#include "include/rtthread.h"
 
 #ifdef FINSH_USING_MSH
 
