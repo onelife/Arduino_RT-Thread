@@ -18,8 +18,16 @@
 #ifndef CONFIG_KERNEL_PRIORITY
     #define CONFIG_KERNEL_PRIORITY      (2)
 #endif
-#ifndef CONFIG_NO_CONSOLE
-    #define CONFIG_NO_CONSOLE           (0)
+#ifndef CONFIG_USING_CONSOLE
+    #define CONFIG_USING_CONSOLE        (1)
+#endif
+#ifndef CONFIG_USING_FINSH
+    #define CONFIG_USING_FINSH          (CONFIG_USING_CONSOLE)
+#endif
+#if (CONFIG_USING_CONSOLE)
+    #ifndef CONFIG_SERIAL_DEVICE
+        #define CONFIG_SERIAL_DEVICE    (Serial)
+    #endif
 #endif
 
 /* Debug Options */
@@ -58,10 +66,24 @@
 #define RT_USING_HEAP
 #define RT_USING_SMALL_MEM
 
-/* Console options Options */
-#if (!CONFIG_NO_CONSOLE)
+/* Console Options */
+#if (CONFIG_USING_CONSOLE)
     #define RT_USING_CONSOLE
     #define RT_CONSOLEBUF_SIZE          (128)
 #endif
+
+/* FinSH Options */
+#if (CONFIG_USING_FINSH)
+    #define RT_USING_FINSH
+    // #define FINSH_USING_SYMTAB          /* Not supported as no access to linker script */
+    // #define FINSH_USING_DESCRIPTION     /* Bundle option with FINSH_USING_SYMTAB */
+    #define FINSH_USING_HISTORY
+    #define FINSH_THREAD_PRIORITY       (20)
+    #define FINSH_THREAD_STACK_SIZE     (2 * 1024)
+    // #define FINSH_USING_MSH
+#endif
+
+/* Other Options */
+// #define RT_USING_COMPONENTS_INIT        /* Not supported as no access to linker script */
 
 #endif /* __RTTHREAD_CFG_H__ */

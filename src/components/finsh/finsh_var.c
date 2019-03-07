@@ -9,7 +9,7 @@
  * 2012-04-27     Bernard      fixed finsh_var_delete issue which
  *                             is found by Grissiom.
  */
-#include <finsh.h>
+#include "finsh.h"
 #include "finsh_var.h"
 
 struct finsh_var global_variable[FINSH_VARIABLE_MAX];

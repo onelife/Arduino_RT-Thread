@@ -8,7 +8,7 @@
  * 2010-03-22     Bernard      first version
  * 2013-10-09     Bernard      fix the command line too long issue.
  */
-#include <finsh.h>
+#include "finsh.h"
 
 #include "finsh_token.h"
 #include "finsh_node.h"

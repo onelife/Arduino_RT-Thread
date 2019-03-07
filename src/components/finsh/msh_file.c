@@ -8,11 +8,11 @@
  * 2015-09-25     Bernard      the first verion for FinSH
  */
 
-#include <rtthread.h>
+#include "include\rtthread.h"
 
 #if defined(FINSH_USING_MSH) && defined(RT_USING_DFS)
 
-#include <finsh.h>
+#include "finsh.h"
 #include "msh.h"
 #include <dfs_posix.h>
 

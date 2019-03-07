@@ -10,7 +10,7 @@
 #ifndef __FINSH_VAR_H__
 #define __FINSH_VAR_H__
 
-#include <finsh.h>
+#include "finsh.h"
 
 /*
  * The variable in finsh is put in data segment as a global variable.

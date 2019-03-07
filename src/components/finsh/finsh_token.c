@@ -8,7 +8,7 @@
  * 2010-03-22     Bernard      first version
  * 2013-04-03     Bernard      strip more characters.
  */
-#include <finsh.h>
+#include "finsh.h"
 #include <stdlib.h>
 
 #include "finsh_token.h"

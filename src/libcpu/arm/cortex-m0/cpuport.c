@@ -13,6 +13,8 @@
 
 #include "include/rtthread.h"
 
+#if defined(ARDUINO_ARCH_SAMD)
+
 struct exception_stack_frame
 {
     rt_uint32_t r0;
@@ -133,3 +135,5 @@ RT_WEAK void rt_hw_cpu_reset(void)
 {
     SCB_AIRCR  = SCB_RESET_VALUE;//((0x5FAUL << SCB_AIRCR_VECTKEY_Pos) |SCB_AIRCR_SYSRESETREQ_Msk);
 }
+
+#endif /* defined(ARDUINO_ARCH_SAMD) */

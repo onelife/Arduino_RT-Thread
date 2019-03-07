@@ -7,7 +7,7 @@
  * Date           Author       Notes
  * 2010-03-22     Bernard      first version
  */
-#include <finsh.h>
+#include "finsh.h"
 
 #include "finsh_var.h"
 

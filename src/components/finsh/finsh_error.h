@@ -10,7 +10,7 @@
 #ifndef __FINSH_ERROR_H__
 #define __FINSH_ERROR_H__
 
-#include <finsh.h>
+#include "finsh.h"
 
 int finsh_error_init(void);
 

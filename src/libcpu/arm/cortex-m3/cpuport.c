@@ -15,6 +15,8 @@
 
 #include "include/rtthread.h"
 
+#if defined(ARDUINO_ARCH_SAM)
+
 struct exception_stack_frame
 {
     rt_uint32_t r0;
@@ -401,3 +403,5 @@ int __rt_ffs(int value)
 #endif
 
 #endif
+
+#endif /* defined(ARDUINO_ARCH_SAM) */

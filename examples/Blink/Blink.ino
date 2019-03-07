@@ -6,21 +6,18 @@ bool led_state = false;
 
 // user thread entry function
 void blink_thread_entry(void* parameter) {
-  rt_kprintf("Start blink_thread\n");
+  rt_kprintf("Start Blink\n");
 
   // the loop is here
   while (true) {
     led_state = !led_state;
     digitalWrite(LED_BUILTIN, led_state ? HIGH : LOW);
-    rt_kprintf("Sleep for 1 second\n");
     rt_thread_sleep(RT_TICK_PER_SECOND);
   }
 }
 
 // RT-Thread function called by "RT_T.begin()"
 void rt_application_init(void) {
-  rt_kprintf("Call rt_application_init");
-
   // statically initialize user thread
   if (RT_EOK != rt_thread_init(
       &blink_thread,              // [in/out] thread descriptor
@@ -40,9 +37,6 @@ void rt_application_init(void) {
 
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
-  Serial.begin(9600);
-  while (!Serial);
-  Serial.println("Start RT-Thread");
   RT_T.begin();
 }
 

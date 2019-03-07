@@ -13,6 +13,8 @@
  * 2013-07-09   aozima    enhancement hard fault exception handler.
  */
 
+#if defined(ARDUINO_ARCH_SAM)
+
     .cpu    cortex-m3
     .fpu    softvfp
     .syntax unified
@@ -189,3 +191,5 @@ _update_done:
 rt_hw_interrupt_check:
     MRS     R0, IPSR
     BX      LR
+
+#endif /* defined(ARDUINO_ARCH_SAM) */

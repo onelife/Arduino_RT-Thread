@@ -7,7 +7,7 @@
  * Date           Author       Notes
  * 2010-03-22     Bernard      first version
  */
-#include <finsh.h>
+#include "finsh.h"
 
 #ifndef __FINSH_HEAP_H__
 #define __FINSH_HEAP_H__

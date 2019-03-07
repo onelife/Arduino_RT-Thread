@@ -10,7 +10,7 @@
 #ifndef __FINSH_TOKEN_H__
 #define __FINSH_TOKEN_H__
 
-#include <finsh.h>
+#include "finsh.h"
 
 enum finsh_token_type
 {

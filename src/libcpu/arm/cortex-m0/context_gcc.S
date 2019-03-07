@@ -13,6 +13,8 @@
  * 2013-11-04   bright       fixed hardfault bug for gcc.
  */
  
+ #if defined(ARDUINO_ARCH_SAMD)
+
     .cpu    cortex-m0
     .fpu    softvfp
     .syntax unified
@@ -189,3 +191,5 @@ HardFault_Handler:
 rt_hw_interrupt_check:
     MRS     R0, IPSR
     BX      LR
+
+#endif /* defined(ARDUINO_ARCH_SAMD) */

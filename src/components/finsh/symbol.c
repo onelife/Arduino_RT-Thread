@@ -8,7 +8,7 @@
  * 2010-03-22     Bernard      first version
  */
  
-#include <rtthread.h>
+#include "include\rtthread.h"
 
 #ifdef RT_USING_FINSH
 
@@ -26,6 +26,18 @@ long list_mailbox(void);
 long list_msgqueue(void);
 long list_mempool(void);
 long list_timer(void);
+
+#ifdef CONFIG_ARDUINO
+#define CONVERT_TO_CMD(f) \
+void f(void); \
+long f##_(void) { \
+    f(); \
+    return 0; \
+}
+#define INSERT_CMD(f) {#f, f##_}
+
+CONVERT_TO_CMD(list_mem);
+#endif /* CONFIG_ARDUINO */
 
 #ifdef FINSH_USING_SYMTAB
 struct finsh_syscall *_syscall_table_begin  = NULL;
@@ -61,6 +73,9 @@ struct finsh_syscall _syscall_table[] =
     {"list_memp", list_mempool},
 #endif
     {"list_timer", list_timer},
+#ifdef CONFIG_ARDUINO
+    INSERT_CMD(list_mem),
+#endif
 };
 struct finsh_syscall *_syscall_table_begin = &_syscall_table[0];
 struct finsh_syscall *_syscall_table_end   = &_syscall_table[sizeof(_syscall_table) / sizeof(struct finsh_syscall)];

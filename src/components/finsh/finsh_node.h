@@ -10,7 +10,7 @@
 #ifndef __FINSH_NODE_H__
 #define __FINSH_NODE_H__
 
-#include <finsh.h>
+#include "finsh.h"
 
 #define FINSH_NODE_UNKNOWN          0
 #define FINSH_NODE_ID               1
