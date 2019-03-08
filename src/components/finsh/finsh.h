@@ -91,7 +91,7 @@ extern struct finsh_syscall_item *global_syscall_list;
 struct finsh_sysvar
 {
     const char*     name;       /* the name of variable */
-#if defined(FINSH_USING_DESCRIPTION) && defined(FINSH_USING_SYMTAB)
+#if defined(FINSH_USING_DESCRIPTION) && (defined(FINSH_USING_SYMTAB) || defined(CONFIG_ARDUINO))
     const char*     desc;       /* description of system variable */
 #endif
     uint8_t      type;      /* the type of variable */

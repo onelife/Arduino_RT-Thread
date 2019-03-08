@@ -76,7 +76,7 @@ int msh_help(int argc, char **argv)
                 FINSH_NEXT_SYSCALL(index))
         {
             if (strncmp(index->name, "__cmd_", 6) != 0) continue;
-#if defined(FINSH_USING_DESCRIPTION) && defined(FINSH_USING_SYMTAB)
+#if defined(FINSH_USING_DESCRIPTION) && (defined(FINSH_USING_SYMTAB) || defined(CONFIG_ARDUINO))
             rt_kprintf("%-16s - %s\n", &index->name[6], index->desc);
 #else
             rt_kprintf("%s ", &index->name[6]);

@@ -6,7 +6,7 @@ Currently most of the optional components are removed for the sake of simplicity
 
 
 ## Available Components ##
-* FinSH
+* FinSH (Support history and autocompletion)
 
 ## Supported Architectures ##
 * SAM (ARM Cortex-M3, Tested with Arduino Due)

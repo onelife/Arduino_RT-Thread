@@ -76,7 +76,7 @@
 #if (CONFIG_USING_FINSH)
     #define RT_USING_FINSH
     // #define FINSH_USING_SYMTAB          /* Not supported as no access to linker script */
-    // #define FINSH_USING_DESCRIPTION     /* Bundle option with FINSH_USING_SYMTAB */
+    #define FINSH_USING_DESCRIPTION     /* Show command description with list() */
     #define FINSH_USING_HISTORY
     #define FINSH_THREAD_PRIORITY       (20)
     #define FINSH_THREAD_STACK_SIZE     (2 * 1024)

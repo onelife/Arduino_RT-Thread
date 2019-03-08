@@ -21,7 +21,7 @@ typedef long (*syscall_func)(void);
 struct finsh_syscall
 {
     const char*     name;       /* the name of system call */
-#if defined(FINSH_USING_DESCRIPTION) && defined(FINSH_USING_SYMTAB)
+#if defined(FINSH_USING_DESCRIPTION) && (defined(FINSH_USING_SYMTAB) || defined(CONFIG_ARDUINO))
     const char*     desc;       /* description of system call */
 #endif
     syscall_func func;      /* the function address of system call */

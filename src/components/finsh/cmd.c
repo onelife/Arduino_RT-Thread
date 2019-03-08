@@ -1122,8 +1122,8 @@ void list_prefix(char *prefix)
 }
 #endif
 
-#if defined(FINSH_USING_SYMTAB) && !defined(FINSH_USING_MSH_ONLY)
-static int dummy = 0;
+#if (defined(FINSH_USING_SYMTAB) || defined(RT_USING_FINSH)) && !defined(FINSH_USING_MSH_ONLY)
+int dummy = 0;
 FINSH_VAR_EXPORT(dummy, finsh_type_int, dummy variable for finsh)
 #endif
 
