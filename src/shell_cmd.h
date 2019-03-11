@@ -45,6 +45,6 @@ ADD_SHELL_CMD(list_timer, list timer in system, list_timer, void, void)
  ADD_SHELL_CMD(led0_on, Turn on builtin LED, led_on, void, void)
 
  Example 3: long led_set(rt_uint32_t id, rt_int32_t val); =>
- ADD_SHELL_CMD(led, Turn on/off any LED, led_set, long, rt_uint32_t id, rt_int32_t val)
+ ADD_SHELL_CMD(led, Turn on/off any LED, led_set, rt_uint32_t, rt_uint32_t id, rt_uint8_t state)
  */
-// ADD_SHELL_CMD(led, Turn on/off builtin LED, led, long, rt_uint32_t id, rt_int32_t val)
+// ADD_SHELL_CMD(led, Turn on/off builtin LED, led, rt_uint32_t, rt_uint32_t id, rt_uint8_t state)

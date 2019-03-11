@@ -1,7 +1,7 @@
 #include <rtt.h>
 
 // ATTENTION: To compile this Sketch, please copy the following line to "shell_cmd.h" (without //)
-// ADD_SHELL_CMD(led, Turn on/off builtin LED, led, long, rt_uint32_t id, rt_int32_t val)
+// ADD_SHELL_CMD(led, Turn on/off builtin LED, led, rt_uint32_t, rt_uint32_t id, rt_uint8_t state)
 
 // ATTENTION: To compile this Sketch, please also copy the following 2 lines to "shell_var.h" (without //)
 // ADD_SHELL_VAR(id, LED ID, led_id, finsh_type_uint)
