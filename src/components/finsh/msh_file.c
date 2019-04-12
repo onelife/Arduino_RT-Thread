@@ -14,7 +14,7 @@
 
 #include "finsh.h"
 #include "msh.h"
-#include <dfs_posix.h>
+#include "components/dfs/include/dfs_posix.h"
 
 static int msh_readline(int fd, char *line_buf, int size)
 {

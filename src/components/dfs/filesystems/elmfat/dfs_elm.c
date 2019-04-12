@@ -17,7 +17,7 @@
  * 2017-05-26     Urey         fix f_mount error when mount more fats
  */
 
-#include <rtthread.h>
+#include "include/rtthread.h"
 #include "ffconf.h"
 #include "ff.h"
 #include <string.h>
@@ -26,8 +26,8 @@
 /* ELM FatFs provide a DIR struct */
 #define HAVE_DIR_STRUCTURE
 
-#include <dfs_fs.h>
-#include <dfs_file.h>
+#include "components/dfs/include/dfs_fs.h"
+#include "components/dfs/include/dfs_file.h"
 
 static rt_device_t disk[_VOLUMES] = {0};
 

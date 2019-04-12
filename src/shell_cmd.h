@@ -26,6 +26,9 @@ ADD_SHELL_CMD(list_mq, list message queue in system, list_msgqueue, void, void)
 #ifdef RT_USING_MEMPOOL
 ADD_SHELL_CMD(list_memp, list memory pool in system, list_mempool, void, void)
 #endif
+#ifdef RT_USING_MEMHEAP
+ADD_SHELL_CMD(list_memheap, list memory heap in system, list_mempool, long, void)
+#endif
 ADD_SHELL_CMD(list_timer, list timer in system, list_timer, void, void)
 
 

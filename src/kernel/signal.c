@@ -26,7 +26,7 @@
 #define DBG_SECTION_NAME    "SIGN"
 #define DBG_COLOR
 #define DBG_LEVEL           DBG_LOG
-#include <rtdbg.h>
+#include "include/rtdbg.h"
 
 #define sig_mask(sig_no)    (1u << sig_no)
 #define sig_valid(sig_no)   (sig_no >= 0 && sig_no < RT_SIG_MAX)

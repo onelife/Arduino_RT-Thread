@@ -12,10 +12,11 @@
  * 2017-12-05     Bernard      fix the fs type search issue in mkfs.
  */
 
-#include <dfs_fs.h>
-#include <dfs_file.h>
-#include "dfs_private.h"
+#include "../include/dfs_fs.h"
+#include "../include/dfs_file.h"
+#include "../include/dfs_private.h"
 
+#ifdef RT_USING_DFS
 /**
  * @addtogroup FsApi
  */
@@ -521,7 +522,7 @@ INIT_ENV_EXPORT(dfs_mount_table);
 #endif
 
 #ifdef RT_USING_FINSH
-#include <finsh.h>
+#include "components/finsh/finsh.h"
 void mkfs(const char *fs_name, const char *device_name)
 {
     dfs_mkfs(fs_name, device_name);
@@ -562,3 +563,5 @@ FINSH_FUNCTION_EXPORT(df, get disk free);
 #endif
 
 /* @} */
+
+#endif /* RT_USING_DFS */

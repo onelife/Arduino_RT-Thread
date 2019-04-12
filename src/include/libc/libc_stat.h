@@ -41,7 +41,8 @@
 
 #define S_ISDIR(m)           (((m) & S_IFMT) == S_IFDIR)
 
-#elif defined(CONFIG_ARDUINO)
+#elif defined(CONFIG_ARDUINO) && defined(ARDUINO_ARCH_SAM)
+#include <sys/stat.h>
 
 #else
 #define S_IFMT               00170000

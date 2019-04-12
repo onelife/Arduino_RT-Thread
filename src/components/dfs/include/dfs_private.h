@@ -10,13 +10,13 @@
 #ifndef DFS_PRIVATE_H__
 #define DFS_PRIVATE_H__
 
-#include <dfs.h>
+#include "dfs.h"
 
 // #define DBG_ENABLE
 #define DBG_SECTION_NAME	"DFS"
 #define DBG_COLOR
 #define DBG_LEVEL			DBG_LOG
-#include <rtdbg.h>
+#include "include/rtdbg.h"
 
 #define NO_WORKING_DIR  "system does not support working directory\n"
 

@@ -11,10 +11,11 @@
  * 2019-01-24     Bernard      Remove file repeatedly open check.
  */
 
-#include <dfs.h>
-#include <dfs_file.h>
-#include <dfs_private.h>
+#include "../include/dfs.h"
+#include "../include/dfs_file.h"
+#include "../include/dfs_private.h"
 
+#ifdef RT_USING_DFS
 /**
  * @addtogroup FileApi
  */
@@ -483,7 +484,7 @@ __exit:
 }
 
 #ifdef RT_USING_FINSH
-#include <finsh.h>
+#include "components/finsh/finsh.h"
 
 static struct dfs_fd fd;
 static struct dirent dirent;
@@ -813,3 +814,4 @@ FINSH_FUNCTION_EXPORT(copy, copy file or dir)
 #endif
 /* @} */
 
+#endif /* RT_USING_DFS */

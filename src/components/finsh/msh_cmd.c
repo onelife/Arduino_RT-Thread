@@ -17,7 +17,7 @@
 #include "msh.h"
 
 #ifdef RT_USING_DFS
-#include <dfs_posix.h>
+#include "components/dfs/include/dfs_posix.h"
 
 #ifdef DFS_USING_WORKDIR
 extern char working_directory[];

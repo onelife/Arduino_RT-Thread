@@ -16,7 +16,7 @@
 
 #include "include/rtthread.h"
 #if defined(RT_USING_POSIX)
-#include <rtdevice.h> /* for wqueue_init */
+#include "include/rtdevice.h" /* for wqueue_init */
 #endif
 
 #ifdef RT_USING_DEVICE

@@ -9,10 +9,11 @@
  * 2018-02-07     Bernard      Change the 3rd parameter of open/fcntl/ioctl to '...'
  */
 
-#include <dfs.h>
-#include <dfs_posix.h>
-#include "dfs_private.h"
+#include "../include/dfs.h"
+#include "../include/dfs_posix.h"
+#include "../include/dfs_private.h"
 
+#ifdef RT_USING_DFS
 /**
  * @addtogroup FsPosixApi
  */
@@ -540,7 +541,7 @@ int mkdir(const char *path, mode_t mode)
 RTM_EXPORT(mkdir);
 
 #ifdef RT_USING_FINSH
-#include <finsh.h>
+#include "components/finsh/finsh.h"
 FINSH_FUNCTION_EXPORT(mkdir, create a directory);
 #endif
 
@@ -902,3 +903,5 @@ char *getcwd(char *buf, size_t size)
 RTM_EXPORT(getcwd);
 
 /* @} */
+
+#endif /* RT_USING_DFS */

@@ -8,9 +8,12 @@
  * 2010-03-22     Bernard      first version
  * 2013-04-03     Bernard      strip more characters.
  */
+#include "include/rtthread.h"
+
+#if defined(RT_USING_FINSH) && !defined(FINSH_USING_MSH_ONLY)
+
 #include "finsh.h"
 #include <stdlib.h>
-
 #include "finsh_token.h"
 #include "finsh_error.h"
 
@@ -596,3 +599,5 @@ static long token_spec_number(char* string, int length, int b)
 
     return d;
 }
+
+#endif /* defined(RT_USING_FINSH) && !defined(FINSH_USING_MSH_ONLY) */

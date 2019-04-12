@@ -7,8 +7,11 @@
  * Date           Author       Notes
  * 2010-03-22     Bernard      first version
  */
-#include "finsh.h"
+#include "include/rtthread.h"
 
+#if defined(RT_USING_FINSH) && !defined(FINSH_USING_MSH_ONLY)
+
+#include "finsh.h"
 #include "finsh_node.h"
 #include "finsh_error.h"
 #include "finsh_var.h"
@@ -181,3 +184,5 @@ struct finsh_node* finsh_node_new_ptr(void* ptr)
     node->value.ptr = ptr;
     return node;
 }
+
+#endif /* defined(RT_USING_FINSH) && !defined(FINSH_USING_MSH_ONLY) */

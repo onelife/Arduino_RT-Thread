@@ -7,6 +7,10 @@
  * Date           Author       Notes
  * 2010-03-22     Bernard      first version
  */
+#include "include/rtthread.h"
+
+#if defined(RT_USING_FINSH) && !defined(FINSH_USING_MSH_ONLY)
+
 #include "finsh_ops.h"
 #include "finsh_vm.h"
 
@@ -601,3 +605,5 @@ const op_func op_table[] =
     /* 47 */ OP_ld_value_dword_stack,
     NULL
 };
+
+#endif /* defined(RT_USING_FINSH) && !defined(FINSH_USING_MSH_ONLY) */

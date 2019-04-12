@@ -6058,7 +6058,7 @@ int f_printf (
 #endif /* !_FS_READONLY */
 #endif /* _USE_STRFUNC */
 
-#include <rtthread.h>
+#include "include/rtthread.h"
 #if _VOLUMES > 1
 int elm_get_vol(FATFS *fat)
 {

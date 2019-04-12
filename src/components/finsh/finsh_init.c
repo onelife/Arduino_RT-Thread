@@ -7,8 +7,11 @@
  * Date           Author       Notes
  * 2010-03-22     Bernard      first version
  */
-#include "finsh.h"
+#include "include/rtthread.h"
 
+#if defined(RT_USING_FINSH) && !defined(FINSH_USING_MSH_ONLY)
+
+#include "finsh.h"
 #include "finsh_node.h"
 #include "finsh_vm.h"
 #include "finsh_parser.h"
@@ -55,3 +58,5 @@ int finsh_reset(struct finsh_parser* parser)
 
     return 0;
 }
+
+#endif /* defined(RT_USING_FINSH) && !defined(FINSH_USING_MSH_ONLY) */

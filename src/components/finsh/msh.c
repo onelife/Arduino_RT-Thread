@@ -18,7 +18,7 @@
 #include <shell.h>
 
 #ifdef RT_USING_DFS
-#include <dfs_posix.h>
+#include "components/dfs/include/dfs_posix.h"
 #endif
 
 #ifdef RT_USING_MODULE

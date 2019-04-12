@@ -7,12 +7,14 @@
  * Date           Author       Notes
  * 2016-12-28     Bernard      first version
  */
-#include <dfs.h>
-#include <dfs_fs.h>
-#include <dfs_posix.h>
+#include "../include/dfs.h"
+#include "../include/dfs_fs.h"
+#include "../include/dfs_posix.h"
 
-#include <dfs_poll.h>
-#include <dfs_select.h>
+#if defined(RT_USING_DFS) && defined(RT_USING_POSIX)
+
+#include "../include/dfs_poll.h"
+#include "../include/dfs_select.h"
 
 static void fdszero(fd_set *set, int nfds)
 {
@@ -178,3 +180,4 @@ int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struc
     return ret;
 }
 
+#endif /* defined(RT_USING_DFS) && defined(RT_USING_POSIX) */

@@ -15,7 +15,7 @@
 #ifndef __DFS_POSIX_H__
 #define __DFS_POSIX_H__
 
-#include <dfs_file.h>
+#include "dfs_file.h"
 
 #ifdef __cplusplus
 extern "C" {

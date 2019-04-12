@@ -11,7 +11,7 @@
 #ifndef __DFS_FS_H__
 #define __DFS_FS_H__
 
-#include <dfs.h>
+#include "dfs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,7 +24,7 @@ struct dfs_fd;
 /* File system operations */
 struct dfs_filesystem_ops
 {
-    char *name;
+    const char *name;
     uint32_t flags;      /* flags for file system operations */
 
     /* operations for file */

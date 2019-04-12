@@ -10,14 +10,16 @@
  */
 #include <stdint.h>
 
-#include <rthw.h>
-#include <rtdevice.h>
-#include <rtthread.h>
+#include "include/rthw.h"
+// #include "include/rtdevice.h"
+#include "include/rtthread.h"
 
-#include <dfs.h>
-#include <dfs_file.h>
-#include <dfs_posix.h>
-#include <dfs_poll.h>
+#if defined(RT_USING_DFS) && defined(RT_USING_POSIX)
+
+#include "../include/dfs.h"
+#include "../include/dfs_file.h"
+#include "../include/dfs_posix.h"
+#include "../include/dfs_poll.h"
 
 struct rt_poll_node;
 
@@ -214,3 +216,4 @@ int poll(struct pollfd *fds, nfds_t nfds, int timeout)
     return num;
 }
 
+#endif /* defined(RT_USING_DFS) && defined(RT_USING_POSIX) */

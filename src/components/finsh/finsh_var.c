@@ -9,6 +9,10 @@
  * 2012-04-27     Bernard      fixed finsh_var_delete issue which
  *                             is found by Grissiom.
  */
+#include "include/rtthread.h"
+
+#if defined(RT_USING_FINSH) && !defined(FINSH_USING_MSH_ONLY)
+
 #include "finsh.h"
 #include "finsh_var.h"
 
@@ -140,3 +144,5 @@ struct finsh_sysvar* finsh_sysvar_lookup(const char* name)
     /* can't find variable */
     return NULL;
 }
+
+#endif /* defined(RT_USING_FINSH) && !defined(FINSH_USING_MSH_ONLY) */

@@ -21,7 +21,7 @@
  * #define DBG_SECTION_NAME    "MOD"
  * #define DBG_ENABLE          // enable debug macro
  * #define DBG_LEVEL           DBG_INFO
- * #include <rtdbg.h>          // must after of DEBUG_ENABLE or some other options
+ * #include "include/rtdbg.h"          // must after of DEBUG_ENABLE or some other options
  *
  * Then in your C/C++ file, you can use LOG_X macro to print out logs:
  * LOG_D("this is a debug log!");

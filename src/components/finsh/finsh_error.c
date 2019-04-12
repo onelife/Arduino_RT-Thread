@@ -7,6 +7,10 @@
  * Date           Author       Notes
  * 2010-03-22     Bernard      first version
  */
+#include "include/rtthread.h"
+
+#if defined(RT_USING_FINSH) && !defined(FINSH_USING_MSH_ONLY)
+
 #include "finsh_error.h"
 
 uint8_t global_errno;
@@ -53,3 +57,5 @@ const char* finsh_error_string(uint8_t type)
 {
     return finsh_error_string_table[type];
 }
+
+#endif /* defined(RT_USING_FINSH) && !defined(FINSH_USING_MSH_ONLY) */

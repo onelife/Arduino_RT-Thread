@@ -10,10 +10,12 @@
  * 2018-03-20     Heyuanjie    dynamic allocation FD
  */
 
-#include <dfs.h>
-#include <dfs_fs.h>
-#include <dfs_file.h>
-#include "dfs_private.h"
+#include "../include/dfs.h"
+#include "../include/dfs_fs.h"
+#include "../include/dfs_file.h"
+#include "../include/dfs_private.h"
+
+#ifdef RT_USING_DFS
 #ifdef RT_USING_LWP
 #include <lwp.h>
 #endif
@@ -518,7 +520,7 @@ struct dfs_fdtable* dfs_fdtable_get(void)
 }
 
 #ifdef RT_USING_FINSH
-#include <finsh.h>
+#include "components/finsh/finsh.h"
 int list_fd(void)
 {
     int index;
@@ -563,3 +565,4 @@ MSH_CMD_EXPORT(list_fd, list file descriptor);
 #endif
 /*@}*/
 
+#endif /* RT_USING_DFS */

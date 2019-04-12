@@ -7,8 +7,11 @@
  * Date           Author       Notes
  * 2010-03-22     Bernard      first version
  */
-#include "finsh.h"
+#include "include/rtthread.h"
 
+#if defined(RT_USING_FINSH) && !defined(FINSH_USING_MSH_ONLY)
+
+#include "finsh.h"
 #include "finsh_var.h"
 
 ALIGN(RT_ALIGN_SIZE)
@@ -277,3 +280,5 @@ void finsh_block_merge(struct finsh_block_header** list, struct finsh_block_head
         header->next = next_node->next;
     }
 }
+
+#endif /* defined(RT_USING_FINSH) && !defined(FINSH_USING_MSH_ONLY) */
