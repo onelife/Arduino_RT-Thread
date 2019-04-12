@@ -173,6 +173,7 @@ void rt_driver_init(void) {
     #if CONFIG_USING_SPI0 || CONFIG_USING_SPI1
         rt_err_t ret = bsp_hw_spi_init();
         RT_ASSERT(RT_EOK == ret);
+        (void)ret;
     #endif
 }
 
@@ -181,6 +182,7 @@ void rt_high_driver_init(void) {
     #if CONFIG_USING_SPISD
         rt_err_t ret = bsp_hw_spiSd_init();
         RT_ASSERT(RT_EOK == ret);
+        (void)ret;
     #endif
 }
 
@@ -220,6 +222,7 @@ void rt_application_init(void) {
         arduino_stack, sizeof(arduino_stack),
         CONFIG_ARDUINO_PRIORITY, CONFIG_ARDUINO_TICK);
     RT_ASSERT(RT_EOK == ret);
+    (void)ret;
 
     rt_thread_startup(&arduino_thread);
 }
