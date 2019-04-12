@@ -17,7 +17,7 @@ void blink_thread_entry(void* parameter) {
 }
 
 // RT-Thread function called by "RT_T.begin()"
-void rt_application_init(void) {
+void rt_setup(void) {
   // statically initialize user thread
   if (RT_EOK != rt_thread_init(
       &blink_thread,              // [in/out] thread descriptor
@@ -40,7 +40,7 @@ void setup() {
   RT_T.begin();
 }
 
-// this function is not called
+// this function will be called by "Arduino" thread
 void loop() {
-  // no code should be here
+  // may put some code here that will be run repeatedly
 }

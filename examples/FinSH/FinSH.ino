@@ -7,7 +7,7 @@
 // ADD_SHELL_VAR(id, LED ID, led_id, finsh_type_uint)
 // ADD_SHELL_VAR(state, LED state, led_state, finsh_type_uchar)
 
-// After upload, send the following command through "Serial Monitor" to see the result.
+// After upload, send the following command through "Serial Monitor" and check the result.
 // led(0, 1)
 // led(0, 0)
 // led(id, state)
@@ -40,7 +40,7 @@ void setup() {
   RT_T.begin();
 }
 
-// this function is not called
+// this function will be called by "Arduino" thread
 void loop() {
-  // no code should be here
+  // may put some code here that will be run repeatedly
 }

@@ -18,11 +18,6 @@
     #error "RT_TICK_PER_SECOND can not be more than CONFIG_TICK_PER_SECOND"
 #endif
 
-#if CONFIG_USING_FINSH
-extern "C" {
-    #include "components/finsh/shell.h"
-}
-#endif
 
 #define KERNEL_PRIORITY     ((CONFIG_KERNEL_PRIORITY << (8 - __NVIC_PRIO_BITS)) & 0xff)
 #define TICK_COUNT          (CONFIG_TICK_PER_SECOND / RT_TICK_PER_SECOND)
@@ -36,7 +31,7 @@ extern "C" {
 
 #if CONFIG_USING_FINSH
 
-/* === Convert Arduino "Serial" to RT-Thread Device === */
+/* === Map Arduino "Serial" to RT-Thread Device === */
 
 static struct rt_device serial_dev;
 
@@ -60,7 +55,7 @@ static rt_size_t serial_write(rt_device_t dev, rt_off_t pos,
     return SERIAL_DEVICE.write((const uint8_t *)buffer, size);
 }
 
-static rt_err_t init_serial_device(void) {
+static rt_err_t arduino_serial_init(void) {
     rt_uint32_t flag = RT_DEVICE_FLAG_RDWR | \
                        RT_DEVICE_FLAG_STREAM | \
                        RT_DEVICE_FLAG_INT_RX;
@@ -83,7 +78,6 @@ static rt_err_t init_serial_device(void) {
 
 
 extern "C" {
-
     /* === Override RT-Thread Functions === */
 
 #if defined(RT_DEBUG)
@@ -143,7 +137,6 @@ extern "C" {
             rt_interrupt_leave();
         }
 
-        // if (serialEventRun) serialEventRun();
         #if CONFIG_USING_FINSH
             if ((serial_dev.rx_indicate != RT_NULL) && \
                  SERIAL_DEVICE.available()) {
@@ -153,20 +146,97 @@ extern "C" {
         return 0;
     }
 
+} /* extern "C" */
+
+
+/* === Initialize Conponents and Handle Arduino Stuff === */
+
+extern "C" {
+    #if CONFIG_USING_SPI0 || CONFIG_USING_SPI1
+    #include "components/arduino/drv_spi.h"
+    #endif
+    #if CONFIG_USING_SPISD
+    #include "components/arduino/drv_spisd.h"
+    #endif
+    #if CONFIG_USING_FINSH
+    #include "components/finsh/shell.h"
+    #endif
+    #ifdef RT_USING_DFS
+    #include "components/dfs/include/dfs.h"
+    #include "components/dfs/include/dfs_fs.h"
+    #include "components/dfs/filesystems/elmfat/dfs_elm.h"
+    #endif
 }
+
+/* Driver initialization */
+void rt_driver_init(void) {
+    #if CONFIG_USING_SPI0 || CONFIG_USING_SPI1
+        rt_err_t ret = bsp_hw_spi_init();
+        RT_ASSERT(RT_EOK == ret);
+    #endif
+}
+
+/* High level driver initialization */
+void rt_high_driver_init(void) {
+    #if CONFIG_USING_SPISD
+        rt_err_t ret = bsp_hw_spiSd_init();
+        RT_ASSERT(RT_EOK == ret);
+    #endif
+}
+
+/* Arduino thread */
+void arduino_thread_entry(void *param) {
+    /* initialize high level driver */
+    rt_high_driver_init();
+
+    /* initialize components */
+    #ifdef RT_USING_DFS
+        (void)dfs_init();
+        #ifdef RT_USING_DFS_ELMFAT
+        (void)elm_init();
+        #endif
+        if (dfs_mount(SD_NAME, "/", "elm", 0, 0))
+            rt_kprintf("[ERR] Mount %s failed!\n", SD_NAME);
+        else
+            rt_kprintf("[INFO] Mount %s to \"/\"\n", SD_NAME);
+    #endif
+
+    /* run Arduino loop here */
+    while (1) {
+        loop();
+        if (serialEventRun) serialEventRun();
+        rt_thread_sleep(1);
+    }
+}
+
+static rt_uint8_t arduino_stack[CONFIG_ARDUINO_STACK_SIZE];
+static struct rt_thread arduino_thread;
+
+/* Application initialization */
+void rt_application_init(void) {
+    rt_err_t ret = rt_thread_init(
+        &arduino_thread, "Arduino",
+        arduino_thread_entry, RT_NULL,
+        arduino_stack, sizeof(arduino_stack),
+        CONFIG_ARDUINO_PRIORITY, CONFIG_ARDUINO_TICK);
+    RT_ASSERT(RT_EOK == ret);
+
+    rt_thread_startup(&arduino_thread);
+}
+
 
 /* === User Override Functions === */
 
-void rt_hw_board_init(void) __attribute__((weak));
-void rt_hw_board_init(void) { }
+void rt_setup(void) __attribute__((weak));
+void loop(void) __attribute__((weak));
 
-void rt_application_init(void) __attribute__((weak));
-void rt_application_init(void) { }
+void rt_setup(void) { }
+void loop(void) { }
 
 /* === RT-Thread Class === */
 
 void RT_Thread::begin(void) {
-    #if defined( ARDUINO_SAM_DUE)
+    #if defined(ARDUINO_SAM_DUE)
         NVIC_SetPriority(UART_IRQn, CONFIG_PRIORITY_MAX);
     #elif defined(ARDUINO_SAMD_MKRZERO)
         NVIC_SetPriority(USB_IRQn, CONFIG_PRIORITY_MAX);
@@ -179,11 +249,8 @@ void RT_Thread::begin(void) {
     /* disable interrupt*/
     rt_hw_interrupt_disable();
 
-    /* init board */
-    rt_hw_board_init();
-
     #ifdef RT_USING_HEAP
-        /* init memory management */
+        /* init heap */
         rt_system_heap_init((void *)&rtt_heap, (void *)&rtt_heap[CONFIG_HEAP_SIZE-1]);
     #endif
 
@@ -203,11 +270,14 @@ void RT_Thread::begin(void) {
         SERIAL_DEVICE.begin(9600);
         while (!SERIAL_DEVICE);
         #if CONFIG_USING_FINSH
-            init_serial_device();
+            arduino_serial_init();
             rt_console_set_device(SERIAL_NAME);
             finsh_system_init();
         #endif
     #endif
+
+    /* init driver */
+    rt_driver_init();
 
     /* show version */
     rt_show_version();
@@ -220,6 +290,9 @@ void RT_Thread::begin(void) {
 
     /* init application */
     rt_application_init();
+
+    /* user defined init function */
+    rt_setup();
 
     /* start scheduler */
     rt_system_scheduler_start();

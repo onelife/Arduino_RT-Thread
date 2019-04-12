@@ -30,7 +30,24 @@ ADD_SHELL_CMD(list_memp, list memory pool in system, list_mempool, void, void)
 ADD_SHELL_CMD(list_memheap, list memory heap in system, list_mempool, long, void)
 #endif
 ADD_SHELL_CMD(list_timer, list timer in system, list_timer, void, void)
+#ifdef RT_USING_DEVICE
+ADD_SHELL_CMD(list_dev, list device in system, list_device, void, void)
+#endif
+#ifdef RT_USING_DFS
+ADD_SHELL_CMD(mkfs, make a file system, mkfs, void, const char *fs_name, const char *device_name)
+ADD_SHELL_CMD(df, get disk free, df, int, const char *path)
 
+ADD_SHELL_CMD(mkdir, create a directory, mkdir, int, const char *path, mode_t mode)
+ADD_SHELL_CMD(cd, change current working directory, chdir, int, const char *path)
+
+ADD_SHELL_CMD(ls, list directory contents, ls, void, char *pathname)
+ADD_SHELL_CMD(rm, remove files or directories, rm, void, const char *filename)
+ADD_SHELL_CMD(cat, print file content, cat, void, const char *filename)
+ADD_SHELL_CMD(copy, copy file or dir, copy, void, const char *src, const char *dst)
+#endif
+#if CONFIG_USING_SPISD
+// ADD_SHELL_CMD(list_sd, show SD information, list_sd, void, void)
+#endif
 
 /* Please add your commands with the following format:
 
