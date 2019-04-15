@@ -280,10 +280,14 @@ void *rt_malloc(rt_size_t size)
     RT_DEBUG_NOT_IN_INTERRUPT;
 
     if (size != RT_ALIGN(size, RT_ALIGN_SIZE))
+    {
         RT_DEBUG_LOG(RT_DEBUG_MEM, ("malloc size %d, but align to %d\n",
                                     size, RT_ALIGN(size, RT_ALIGN_SIZE)));
+    }
     else
+    {
         RT_DEBUG_LOG(RT_DEBUG_MEM, ("malloc size %d\n", size));
+    }
 
     /* alignment size */
     size = RT_ALIGN(size, RT_ALIGN_SIZE);

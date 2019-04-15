@@ -237,7 +237,7 @@ void *rt_memcpy(void *dst, const void *src, rt_ubase_t count)
     char *src_ptr = (char *)src;
     long *aligned_dst;
     long *aligned_src;
-    int len = count;
+    unsigned long len = count;
 
     /* If the size is small, or either SRC or DST is unaligned,
     then punt into the byte copy loop.  This should be rare. */
@@ -1106,6 +1106,7 @@ RTM_EXPORT(rt_console_set_device);
 
 RT_WEAK void rt_hw_console_output(const char *str)
 {
+    (void)str;
     /* empty console output */
 }
 RTM_EXPORT(rt_hw_console_output);

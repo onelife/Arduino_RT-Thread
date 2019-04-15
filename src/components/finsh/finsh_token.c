@@ -12,14 +12,14 @@
 
 #if defined(RT_USING_FINSH) && !defined(FINSH_USING_MSH_ONLY)
 
-#include "finsh.h"
 #include <stdlib.h>
+#include "finsh.h"
 #include "finsh_token.h"
 #include "finsh_error.h"
 
-#define is_alpha(ch)    ((ch | 0x20) - 'a') < 26u
+#define is_alpha(ch)    ((ch | 0x20) - 'a') < 26
 #define is_digit(ch)    ((ch) >= '0' && (ch) <= '9')
-#define is_xdigit(ch)   (((ch) >= '0' && (ch) <= '9') || (((ch | 0x20) - 'a') < 6u))
+#define is_xdigit(ch)   (((ch) >= '0' && (ch) <= '9') || (((ch | 0x20) - 'a') < 6))
 #define is_separator(ch) !(((ch) >= 'a' && (ch) <= 'z') \
      || ((ch) >= 'A' && (ch) <= 'Z') || ((ch) >= '0' && (ch) <= '9') || ((ch) == '_'))
 #define is_eof(self) (self)->eof
@@ -298,7 +298,7 @@ static void token_run(struct finsh_token* self)
 
 static int token_match_name(struct finsh_token* self, const char* str)
 {
-    int i;
+    unsigned int i;
 
     for (i = 0; i < sizeof(finsh_name_table)/sizeof(struct name_table); i++)
     {
@@ -439,10 +439,10 @@ static int token_proc_escape(struct finsh_token* self)
         token_prev_char(self);
         break;
     default:
-        if ( (ch - '0') < 8u)
+        if ((ch - '0') < 8)
         {
             result = 0;
-            while ( (ch - '0') < 8u )
+            while ((ch - '0') < 8)
             {
                 result = result*8 + ch - '0';
                 ch = token_next_char(self);

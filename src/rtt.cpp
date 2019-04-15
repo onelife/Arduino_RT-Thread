@@ -188,6 +188,8 @@ void rt_high_driver_init(void) {
 
 /* Arduino thread */
 void arduino_thread_entry(void *param) {
+    (void)param;
+
     /* initialize high level driver */
     rt_high_driver_init();
 

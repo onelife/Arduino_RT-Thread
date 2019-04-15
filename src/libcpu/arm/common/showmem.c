@@ -12,7 +12,7 @@
 
 void rt_hw_show_memory(rt_uint32_t addr, rt_uint32_t size)
 {
-	int i = 0, j =0;
+	unsigned int i = 0, j =0;
 
 	RT_ASSERT(addr);
 

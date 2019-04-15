@@ -102,6 +102,8 @@ int dfs_elm_mount(struct dfs_filesystem *fs, unsigned long rwflag, const void *d
     int index;
     struct rt_device_blk_geometry geometry;
     char logic_nbr[2] = {'0',':'};
+    (void)rwflag;
+    (void)data;
 
     /* get an empty position */
     index = get_disk(RT_NULL);
@@ -476,6 +478,10 @@ int dfs_elm_close(struct dfs_fd *file)
 
 int dfs_elm_ioctl(struct dfs_fd *file, int cmd, void *args)
 {
+    (void)file;
+    (void)cmd;
+    (void)args;
+
     return -ENOSYS;
 }
 
@@ -653,6 +659,8 @@ int dfs_elm_unlink(struct dfs_filesystem *fs, const char *path)
     rt_snprintf(drivers_fn, 256, "%d:%s", vol, path);
 #else
     const char *drivers_fn;
+    (void)fs;
+
     drivers_fn = path;
 #endif
 
@@ -686,6 +694,7 @@ int dfs_elm_rename(struct dfs_filesystem *fs, const char *oldpath, const char *n
     rt_snprintf(drivers_oldfn, 256, "%d:%s", vol, oldpath);
 #else
     const char *drivers_oldfn, *drivers_newfn;
+    (void)fs;
 
     drivers_oldfn = oldpath;
     drivers_newfn = newpath;
@@ -719,6 +728,8 @@ int dfs_elm_stat(struct dfs_filesystem *fs, const char *path, struct stat *st)
     rt_snprintf(drivers_fn, 256, "%d:%s", vol, path);
 #else
     const char *drivers_fn;
+    (void)fs;
+
     drivers_fn = path;
 #endif
 
@@ -824,12 +835,16 @@ INIT_COMPONENT_EXPORT(elm_init);
 /* Initialize a Drive */
 DSTATUS disk_initialize(BYTE drv)
 {
+    (void)drv;
+
     return 0;
 }
 
 /* Return Disk Status */
 DSTATUS disk_status(BYTE drv)
 {
+    (void)drv;
+
     return 0;
 }
 

@@ -134,7 +134,7 @@ static int fd_alloc(struct dfs_fdtable *fdt, int startfd)
     }
 
     /* allocate a larger FD container */
-    if (idx == fdt->maxfd && fdt->maxfd < DFS_FD_MAX)
+    if (idx == (int)fdt->maxfd && fdt->maxfd < DFS_FD_MAX)
     {
         int cnt, index;
         struct dfs_fd **fds;
@@ -188,7 +188,7 @@ int fd_new(void)
     idx = fd_alloc(fdt, 0);
 
     /* can't find an empty fd entry */
-    if (idx == fdt->maxfd)
+    if (idx == (int)fdt->maxfd)
     {
         idx = -(1 + DFS_FD_OFFSET);
         LOG_E( "DFS fd new is failed! Could not found an empty fd entry.");

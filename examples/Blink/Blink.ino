@@ -1,11 +1,15 @@
 #include <rtt.h>
 
+// NOTES: "CONFIG_USING_FINSH" and "CONFIG_USING_SPISD" in "rtt.h" may be turned off to save memory
+
 struct rt_thread blink_thread;
 byte blink_thread_stack[1024];
 bool led_state = false;
 
 // user thread entry function
 void blink_thread_entry(void* parameter) {
+  (void)parameter;
+
   rt_kprintf("Start Blink\n");
 
   // the loop is here

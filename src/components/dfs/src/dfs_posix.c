@@ -510,6 +510,7 @@ int mkdir(const char *path, mode_t mode)
     int fd;
     struct dfs_fd *d;
     int result;
+    (void)mode;
 
     fd = fd_new();
     if (fd == -1)
@@ -872,6 +873,8 @@ FINSH_FUNCTION_EXPORT_ALIAS(chdir, cd, change current working directory);
 int access(const char *path, int amode)
 {
     struct stat sb;
+    (void)amode;
+
     if (stat(path, &sb) < 0)
         return -1; /* already sets errno */
 

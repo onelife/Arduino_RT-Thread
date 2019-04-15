@@ -152,6 +152,8 @@ static char finsh_getchar(void)
 #ifndef RT_USING_POSIX
 static rt_err_t finsh_rx_ind(rt_device_t dev, rt_size_t size)
 {
+    (void)dev;
+    (void)size;
     RT_ASSERT(shell != RT_NULL);
 
     /* release semaphore to let finsh thread rx data */
@@ -461,6 +463,7 @@ static void shell_push_history(struct finsh_shell *shell)
 void finsh_thread_entry(void *parameter)
 {
     char ch;
+    (void)parameter;
 
     /* normal is echo mode */
 #ifndef FINSH_ECHO_DISABLE_DEFAULT

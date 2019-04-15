@@ -250,8 +250,9 @@ static rt_err_t sd_read_block(struct bsp_sd_contex *ctx, void *buf,
         ret = RT_EOK;
     } while(0);
 
-    if (RT_EOK != ret)
+    if (RT_EOK != ret) {
         sd_debug("SPISD err: read block failed! [%02x]\n", ret);
+    }
     return ret;
 }
 
@@ -429,8 +430,9 @@ static rt_err_t sd_write_block(struct bsp_sd_contex *ctx, void *buf,
         ret = RT_EOK;
     } while (0);
 
-    if (RT_EOK != ret)
+    if (RT_EOK != ret) {
         sd_debug("SPISD err: write block failed! [%02x]\n", ret);
+    }
     return ret;
 }
 
@@ -521,8 +523,9 @@ static rt_err_t bsp_spiSd_init(rt_device_t dev) {
     SD_CS(0);
     rt_device_close(ctx->ldev);
 
-    if (RT_EOK != ret)
+    if (RT_EOK != ret) {
         sd_debug("SPISD err: init failed! (%08x)\n", ret);
+    }
     return ret;
 }
 
@@ -537,7 +540,7 @@ static rt_size_t bsp_spiSd_read(rt_device_t dev, rt_off_t sector, void *buf,
     if (RT_EOK != err) {
         rt_set_errno(err);
         return 0;
-    };
+    }
     sd_debug("SPISD: read sect %d [%d]\n", sector, count);
 
     /* convert to byte address if necessary */
@@ -803,9 +806,9 @@ static rt_err_t bsp_spiSd_control(rt_device_t dev, rt_int32_t cmd, void *buf) {
         break;
     }
 
-    if (RT_EOK != ret)
+    if (RT_EOK != ret) {
         sd_debug("SPISD err: control failed! [%08x]\n", ret);
-
+    }
     return ret;
 }
 

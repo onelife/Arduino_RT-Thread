@@ -5,27 +5,26 @@
  *
  * Change Logs:
  * Date         Author    Notes
- * 2010-01-25   Bernard      first version
- * 2012-06-01   aozima       set pendsv priority to 0xFF.
- * 2012-08-17   aozima       fixed bug: store r8 - r11.
- * 2013-02-20   aozima       port to gcc.
- * 2013-06-18   aozima       add restore MSP feature.
- * 2013-11-04   bright       fixed hardfault bug for gcc.
+ * 2009-10-11   Bernard   First version
+ * 2010-12-29   onelife   Modify for EFM32
+ * 2011-06-17   onelife   Merge all of the assembly source code into context_gcc.S
+ * 2011-07-12   onelife   Add interrupt context check function
+ * 2013-06-18   aozima    add restore MSP feature.
+ * 2013-07-09   aozima    enhancement hard fault exception handler.
  */
- 
- #if defined(ARDUINO_ARCH_SAMD)
 
-    .cpu    cortex-m0
+    .cpu    cortex-m3
     .fpu    softvfp
     .syntax unified
     .thumb
     .text
 
-	.equ 	SCB_VTOR, 0xE000ED08            /* Vector Table Offset Register */
-	.equ 	NVIC_INT_CTRL, 0xE000ED04       /* interrupt control state register */
-	.equ 	NVIC_SHPR3, 0xE000ED20          /* system priority register (3) */
-	.equ 	NVIC_PENDSV_PRI, 0x00FF0000     /* PendSV priority value (lowest) */
-	.equ 	NVIC_PENDSVSET, 0x10000000      /* value to trigger PendSV exception */
+    .equ    SCB_VTOR, 0xE000ED08            /* Vector Table Offset Register */
+    .equ    ICSR, 0xE000ED04                /* interrupt control state register */
+    .equ    PENDSVSET_BIT, 0x10000000       /* value to trigger PendSV exception */
+    
+    .equ    SHPR3, 0xE000ED20               /* system priority register (3) */
+    .equ    PENDSV_PRI_LOWEST, 0x00FF0000   /* PendSV priority value (lowest) */
 
 /*
  * void rt_hw_context_switch(rt_uint32 from, rt_uint32 to);
@@ -43,7 +42,7 @@ rt_hw_context_switch:
     LDR     R3, [R2]
     CMP     R3, #1
     BEQ     _reswitch
-    MOVS    R3, #1
+    MOV     R3, #1
     STR     R3, [R2]
 
     LDR     R2, =rt_interrupt_from_thread   /* set rt_interrupt_from_thread */
@@ -53,8 +52,8 @@ _reswitch:
     LDR     R2, =rt_interrupt_to_thread     /* set rt_interrupt_to_thread */
     STR     R1, [R2]
 
-    LDR     R0, =NVIC_INT_CTRL           /* trigger the PendSV exception (causes context switch) */
-    LDR     R1, =NVIC_PENDSVSET
+    LDR     R0, =ICSR           /* trigger the PendSV exception (causes context switch) */
+    LDR     R1, =PENDSVSET_BIT
     STR     R1, [R0]
     BX      LR
 
@@ -62,9 +61,9 @@ _reswitch:
  * R1 --> switch to thread stack
  * psr, pc, LR, R12, R3, R2, R1, R0 are pushed into [from] stack
  */
-    .global PendSV_Handler
-    .type PendSV_Handler, %function
-PendSV_Handler:
+    .global pendSVHook
+    .type pendSVHook, %function
+pendSVHook:
     /* disable interrupt to protect context switch */
     MRS     R2, PRIMASK
     CPSID   I
@@ -72,56 +71,36 @@ PendSV_Handler:
     /* get rt_thread_switch_interrupt_flag */
     LDR     R0, =rt_thread_switch_interrupt_flag
     LDR     R1, [R0]
-    CMP     R1, #0x00
-    BEQ     pendsv_exit		/* pendsv aLReady handled */
+    CBZ     R1, pendsv_exit         /* pendsv aLReady handled */
 
     /* clear rt_thread_switch_interrupt_flag to 0 */
-    MOVS    R1, #0
+    MOV     R1, #0
     STR     R1, [R0]
 
     LDR     R0, =rt_interrupt_from_thread
     LDR     R1, [R0]
-    CMP     R1, #0x00
-    BEQ     switch_to_thread    /* skip register save at the first time */
+    CBZ     R1, switch_to_thread    /* skip register save at the first time */
 
-	MRS     R1, PSP                 /* get from thread stack pointer */
-
-    SUBS    R1, R1, #0x20           /* space for {R4 - R7} and {R8 - R11} */
+    MRS     R1, PSP                 /* get from thread stack pointer */
+    STMFD   R1!, {R4 - R11}         /* push R4 - R11 register */
     LDR     R0, [R0]
     STR     R1, [R0]                /* update from thread stack pointer */
 
-    STMIA   R1!, {R4 - R7}          /* push thread {R4 - R7} register to thread stack */
-
-    MOV     R4, R8                  /* mov thread {R8 - R11} to {R4 - R7} */
-    MOV     R5, R9
-    MOV     R6, R10
-    MOV     R7, R11
-    STMIA   R1!, {R4 - R7}          /* push thread {R8 - R11} high register to thread stack */
 switch_to_thread:
     LDR     R1, =rt_interrupt_to_thread
     LDR     R1, [R1]
     LDR     R1, [R1]                /* load thread stack pointer */
 
-	LDMIA   R1!, {R4 - R7}          /* pop thread {R4 - R7} register from thread stack */
-    PUSH    {R4 - R7}               /* push {R4 - R7} to MSP for copy {R8 - R11} */
-
-    LDMIA   R1!, {R4 - R7}          /* pop thread {R8 - R11} high register from thread stack to {R4 - R7} */
-    MOV     R8,  R4                 /* mov {R4 - R7} to {R8 - R11} */
-    MOV     R9,  R5
-    MOV     R10, R6
-    MOV     R11, R7
-
-    POP     {R4 - R7}               /* pop {R4 - R7} from MSP */
-
+    LDMFD   R1!, {R4 - R11}         /* pop R4 - R11 register */
     MSR     PSP, R1                 /* update stack pointer */
 
 pendsv_exit:
     /* restore interrupt */
     MSR     PRIMASK, R2
 
-    MOVS    R0, #0x04
-    RSBS    R0, R0, #0x00
-    BX      R0
+    ORR     LR, LR, #0x04
+    BX      LR
+
 /*
  * void rt_hw_context_switch_to(rt_uint32 to);
  * R0 --> to
@@ -134,33 +113,34 @@ rt_hw_context_switch_to:
 
     /* set from thread to 0 */
     LDR     R1, =rt_interrupt_from_thread
-    MOVS    R0, #0
+    MOV     R0, #0
     STR     R0, [R1]
 
     /* set interrupt flag to 1 */
     LDR     R1, =rt_thread_switch_interrupt_flag
-    MOVS    R0, #1
+    MOV     R0, #1
     STR     R0, [R1]
 
     /* set the PendSV exception priority */
-    LDR     R0, =NVIC_SHPR3
-    LDR     R1, =NVIC_PENDSV_PRI
-    LDR     R2, [R0,#0x00]       /* read */
-    ORRS    R1, R1, R2             /* modify */
-    STR     R1, [R0]             /* write-back */
+    LDR     R0, =SHPR3
+    LDR     R1, =PENDSV_PRI_LOWEST
+    LDR.W   R2, [R0,#0]             /* read */
+    ORR     R1, R1, R2              /* modify */
+    STR     R1, [R0]                /* write-back */
 
-    LDR     R0, =NVIC_INT_CTRL               /* trigger the PendSV exception (causes context switch) */
-    LDR     R1, =NVIC_PENDSVSET
+    LDR     R0, =ICSR               /* trigger the PendSV exception (causes context switch) */
+    LDR     R1, =PENDSVSET_BIT
     STR     R1, [R0]
-    NOP
+
     /* restore MSP */
-    LDR     R0, =SCB_VTOR
-    LDR     R0, [R0]
-    LDR     R0, [R0]
+    LDR     r0, =SCB_VTOR
+    LDR     r0, [r0]
+    LDR     r0, [r0]
     NOP
-    MSR     MSP, R0
+    MSR     msp, r0
 
     /* enable interrupts at processor level */
+    CPSIE   F
     CPSIE   I
 
     /* never reach here! */
@@ -176,11 +156,29 @@ rt_hw_interrupt_thread_switch:
     .type HardFault_Handler, %function
 HardFault_Handler:
     /* get current context */
-    MRS     R0, PSP                 /* get fault thread stack pointer */
+    MRS     r0, msp                 /* get fault context from handler. */
+    TST     lr, #0x04               /* if(!EXC_RETURN[2]) */
+    BEQ     _get_sp_done
+    MRS     r0, psp                 /* get fault context from thread. */
+_get_sp_done:
+
+    STMFD   r0!, {r4 - r11}         /* push r4 - r11 register */
+    STMFD   r0!, {lr}               /* push exec_return register */
+
+    TST     lr, #0x04               /* if(!EXC_RETURN[2]) */
+    BEQ     _update_msp
+    MSR     psp, r0                 /* update stack pointer to PSP. */
+    B       _update_done
+_update_msp:
+    MSR     msp, r0                 /* update stack pointer to MSP. */
+_update_done:
+
     PUSH    {LR}
     BL      rt_hw_hard_fault_exception
-    POP     {PC}
+    POP     {LR}
 
+    ORR     LR, LR, #0x04
+    BX      LR
 
 /*
  * rt_uint32_t rt_hw_interrupt_check(void);
@@ -191,5 +189,3 @@ HardFault_Handler:
 rt_hw_interrupt_check:
     MRS     R0, IPSR
     BX      LR
-
-#endif /* defined(ARDUINO_ARCH_SAMD) */

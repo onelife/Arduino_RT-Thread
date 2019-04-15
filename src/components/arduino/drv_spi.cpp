@@ -89,8 +89,9 @@ static rt_err_t bsp_spi_open(rt_device_t dev, rt_uint16_t oflag) {
         spi_debug("SPI%d: open with flag %x\n", ctx->chn, oflag);
     } while (0);
 
-    if (RT_EOK != ret)
+    if (RT_EOK != ret) {
         spi_debug("SPI%d err: open failed [%08x]\n", ctx->chn, ret);
+    }
     return ret;
 }
 
@@ -105,8 +106,9 @@ static rt_err_t bsp_spi_close(rt_device_t dev) {
         spi_debug("SPI%d: closed\n", ctx->chn);
     } while (0);
 
-    if (RT_EOK != ret)
+    if (RT_EOK != ret) {
         spi_debug("SPI%d err: close failed [%08x]\n", ctx->chn, ret);
+    }
     return ret;
 }
 

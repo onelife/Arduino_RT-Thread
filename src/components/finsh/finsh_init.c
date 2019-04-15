@@ -50,6 +50,8 @@ int finsh_flush(struct finsh_parser* parser)
 
 int finsh_reset(struct finsh_parser* parser)
 {
+    (void)parser;
+
     /* finsh init */
     finsh_node_init();
     finsh_var_init();

@@ -678,7 +678,7 @@ static void rt_thread_timer_entry(void *parameter)
  */
 void rt_system_timer_init(void)
 {
-    int i;
+    unsigned int i;
 
     for (i = 0; i < sizeof(rt_timer_list) / sizeof(rt_timer_list[0]); i++)
     {
