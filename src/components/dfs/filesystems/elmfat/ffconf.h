@@ -38,11 +38,11 @@
 /  f_findnext(). (0:Disable, 1:Enable 2:Enable with matching altname[] too) */
 
 
-#define FF_USE_MKFS		1
+#define FF_USE_MKFS		1  /* RTT config */
 /* This option switches f_mkfs() function. (0:Disable or 1:Enable) */
 
 
-#define FF_USE_FASTSEEK	1
+#define FF_USE_FASTSEEK	1   /* RTT config */
 /* This option switches fast seek function. (0:Disable or 1:Enable) */
 
 
@@ -68,7 +68,7 @@
 / Locale and Namespace Configurations
 /---------------------------------------------------------------------------*/
 
-#ifdef RT_DFS_ELM_CODE_PAGE
+#ifdef RT_DFS_ELM_CODE_PAGE  /* RTT config */
 #define FF_CODE_PAGE	RT_DFS_ELM_CODE_PAGE
 #else
 #define FF_CODE_PAGE	932
@@ -101,7 +101,7 @@
 */
 
 
-#if RT_DFS_ELM_USE_LFN
+#if RT_DFS_ELM_USE_LFN  /* RTT config */
 #define FF_USE_LFN		RT_DFS_ELM_USE_LFN
 #define FF_MAX_LFN		RT_DFS_ELM_MAX_LFN
 #else
@@ -126,7 +126,7 @@
 /  ff_memfree() in ffsystem.c, need to be added to the project. */
 
 
-#ifdef RT_DFS_ELM_LFN_UNICODE
+#ifdef RT_DFS_ELM_LFN_UNICODE  /* RTT config */
 #define FF_LFN_UNICODE	1
 #else
 #define FF_LFN_UNICODE	0
@@ -176,7 +176,7 @@
 / Drive/Volume Configurations
 /---------------------------------------------------------------------------*/
 
-#ifdef RT_DFS_ELM_DRIVES
+#ifdef RT_DFS_ELM_DRIVES  /* RTT config */
 #define FF_VOLUMES		RT_DFS_ELM_DRIVES
 #else
 #define FF_VOLUMES		1
@@ -208,7 +208,7 @@
 
 
 #define FF_MIN_SS		512
-#ifdef RT_DFS_ELM_MAX_SECTOR_SIZE
+#ifdef RT_DFS_ELM_MAX_SECTOR_SIZE  /* RTT config */
 #define FF_MAX_SS		RT_DFS_ELM_MAX_SECTOR_SIZE
 #else
 #define FF_MAX_SS		512
@@ -250,7 +250,7 @@
 /  Instead of private sector buffer eliminated from the file object, common sector
 /  buffer in the filesystem object (FATFS) is used for the file data transfer. */
 
-#ifdef RT_DFS_ELM_USE_EXFAT
+#ifdef RT_DFS_ELM_USE_EXFAT  /* RTT config */
 #define FF_FS_EXFAT		1
 #else
 #define FF_FS_EXFAT		0
@@ -287,13 +287,13 @@
 
 
 /* #include <somertos.h>	// O/S definitions */
-#ifdef RT_DFS_ELM_REENTRANT
+#ifdef RT_DFS_ELM_REENTRANT  /* RTT config */
 #define FF_FS_REENTRANT	1
 #else
 #define FF_FS_REENTRANT	0
 #endif
 #define FF_FS_TIMEOUT	1000
-#define FF_SYNC_t		rt_mutex_t
+#define FF_SYNC_t		rt_mutex_t  /* RTT config */
 /* The option FF_FS_REENTRANT switches the re-entrancy (thread safe) of the FatFs
 /  module itself. Note that regardless of this option, file access to different
 /  volume is always re-entrant and volume control functions, f_mount(), f_mkfs()

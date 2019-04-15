@@ -4537,24 +4537,7 @@ FRESULT f_readdir (
 	LEAVE_FF(fs, res);
 }
 
-FRESULT f_seekdir(
-	DIR *dj,		/* Pointer to the open directory object */
-	int offset		/* the seek offset */
-)
-{
-	int i = 0;
 
-	if (dir_sdi(dj, 0) != FR_OK || offset < 0)
-		return FR_INT_ERR;
-
-	while(i < offset)
-	{
-		if(dir_read(dj, 0) != FR_OK || dir_next(dj, 0) != FR_OK)
-			return FR_INT_ERR;
-		i++;
-	} 
-	return FR_OK;
-}
 
 #if FF_USE_FIND
 /*-----------------------------------------------------------------------*/
@@ -6571,18 +6554,4 @@ FRESULT f_setcp (
 }
 #endif	/* FF_CODE_PAGE == 0 */
 
-#include "include/rtthread.h"
-#if FF_VOLUMES > 1
-int elm_get_vol(FATFS *fat)
-{
-	int vol;
-
-	for (vol = 0; vol < FF_VOLUMES; vol ++)
-	{
-		if (FatFs[vol] == fat) return vol;
-	}
-
-	return -1;
-}
-#endif
-
+#include "dfs_patch_content.h"
