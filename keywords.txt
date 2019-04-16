@@ -60,6 +60,19 @@ rt_thread_timeout			KEYWORD2
 rt_thread_sleep				KEYWORD2
 
 #######################################
+# IPC
+#######################################
+rt_mutex_create				KEYWORD2
+rt_mutex_init				KEYWORD2
+rt_mutex_take				KEYWORD2
+rt_mutex_release			KEYWORD2
+
+#######################################
+# DFS
+#######################################
+fsync						KEYWORD2
+
+#######################################
 # Instances (KEYWORD2)
 #######################################
 RT_T		KEYWORD2
@@ -73,6 +86,7 @@ CONFIG_KERNEL_PRIORITY		LITERAL1
 CONFIG_USING_CONSOLE		LITERAL1
 CONFIG_USING_FINSH			LITERAL1
 CONFIG_SERIAL_DEVICE		LITERAL1
+RT_NULL						LITERAL1
 RT_EOK						LITERAL1
 RT_ERROR					LITERAL1
 RT_ETIMEOUT					LITERAL1
@@ -84,3 +98,7 @@ RT_EBUSY					LITERAL1
 RT_EIO						LITERAL1
 RT_EINTR					LITERAL1
 RT_EINVAL					LITERAL1
+RT_IPC_FLAG_FIFO			LITERAL1
+RT_IPC_FLAG_PRIO			LITERAL1
+RT_WAITING_FOREVER			LITERAL1
+RT_WAITING_NO				LITERAL1
