@@ -853,8 +853,8 @@ static rt_err_t bsp_spiSd_contex_init(struct bsp_sd_contex *ctx,
         ctx->dev.write = bsp_spiSd_write;
         ctx->dev.control = bsp_spiSd_control;
         ctx->dev.user_data = (void *)ctx;
-        ret = rt_device_register(&ctx->dev, name, RT_DEVICE_FLAG_RDWR | \
-            RT_DEVICE_FLAG_REMOVABLE);
+        ret = rt_device_register(&ctx->dev, name,
+            RT_DEVICE_FLAG_RDWR | RT_DEVICE_FLAG_REMOVABLE);
     } while (0);
 
     return ret;
@@ -899,8 +899,7 @@ rt_err_t bsp_hw_spiSd_init(void) {
 /*******************************************************************************
  *  Export to FINSH
  ******************************************************************************/
-#if 0   //#ifdef RT_USING_FINSH
-#include "components/finsh/finsh.h"
+#ifdef RT_USING_FINSH
 
 rt_err_t list_sd(void) {
     struct bsp_sd_contex *ctx = SD_CTX();
@@ -914,16 +913,23 @@ rt_err_t list_sd(void) {
         rt_kprintf("Error: open failed!\n");
         return ret;
     }
+    if (RT_EOK != (ret = rt_device_open(ctx->ldev, RT_DEVICE_OFLAG_RDWR))) {
+        rt_kprintf("Error: open ldev failed!\n");
+        rt_device_close(&ctx->dev);
+        return ret;
+    }
     SD_CS(1);
 
     /* Receive CID as a data block (16 bytes) */
     if (sd_send_cmd(ctx, CMD10, 0x00000000, buf_res)) {
         SD_CS(0);
+        rt_device_close(ctx->ldev);
         rt_device_close(&ctx->dev);
         rt_kprintf("Error: Get CID failed!\n");
         return -RT_ERROR;
     }
     SD_CS(0);
+    rt_device_close(ctx->ldev);
 
     rt_kprintf("    SD Card on %s\n", ctx->ldev->parent.name);
     rt_kprintf(" ------------------------------\n");
@@ -964,7 +970,7 @@ rt_err_t list_sd(void) {
 
     return RT_EOK;
 }
-FINSH_FUNCTION_EXPORT(list_sd, list the SD card.)
+FINSH_FUNCTION_EXPORT(list_sd, show SD information.)
 #endif /* RT_USING_FINSH */
 
 /***************************************************************************//**

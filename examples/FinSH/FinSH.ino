@@ -15,6 +15,8 @@
 // state=0
 // led(id, state)
 
+// NOTES: "CONFIG_USING_SPISD" in "rtconfig.h" may be turned off to save memory
+
 extern "C" {
 
   rt_uint32_t led_id = 0;

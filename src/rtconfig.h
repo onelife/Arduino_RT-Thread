@@ -1,10 +1,10 @@
 /***************************************************************************//**
- * @file    rtt.h
+ * @file    rtconfig.h
  * @brief   Arduino RT-Thread library config
  * @author  onelife <onelife.real[at]gmail.com>
  ******************************************************************************/
-#ifndef __RTTHREAD_CFG_H__
-#define __RTTHREAD_CFG_H__
+#ifndef __RTCONFIG_H__
+#define __RTCONFIG_H__
 
 /* Porting Options */
 #define CONFIG_ARDUINO
@@ -151,4 +151,4 @@
 /* Other Options */
 // #define RT_USING_COMPONENTS_INIT     /* Not supported as no access to linker script */
 
-#endif /* __RTTHREAD_CFG_H__ */
+#endif /* __RTCONFIG_H__ */

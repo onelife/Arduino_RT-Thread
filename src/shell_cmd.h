@@ -46,7 +46,7 @@ ADD_SHELL_CMD(cat, print file content, cat, void, const char *filename)
 ADD_SHELL_CMD(copy, copy file or dir, copy, void, const char *src, const char *dst)
 #endif
 #if CONFIG_USING_SPISD
-// ADD_SHELL_CMD(list_sd, show SD information, list_sd, void, void)
+ADD_SHELL_CMD(list_sd, show SD information, list_sd, rt_err_t, void)
 #endif
 
 /* Please add your commands with the following format:
@@ -64,7 +64,7 @@ ADD_SHELL_CMD(copy, copy file or dir, copy, void, const char *src, const char *d
  Example 2: void led_on(void); =>
  ADD_SHELL_CMD(led0_on, Turn on builtin LED, led_on, void, void)
 
- Example 3: long led_set(rt_uint32_t id, rt_int32_t val); =>
+ Example 3: rt_uint32_t led_set(rt_uint32_t id, rt_int32_t val); =>
  ADD_SHELL_CMD(led, Turn on/off any LED, led_set, rt_uint32_t, rt_uint32_t id, rt_uint8_t state)
  */
 // ADD_SHELL_CMD(led, Turn on/off builtin LED, led, rt_uint32_t, rt_uint32_t id, rt_uint8_t state)

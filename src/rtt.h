@@ -7,6 +7,9 @@
 #define __RTT_H__
 
 #include "include/rtthread.h"
+#ifdef RT_USING_DFS
+#include "components/dfs/include/dfs_posix.h"
+#endif
 
 
 class RT_Thread {
