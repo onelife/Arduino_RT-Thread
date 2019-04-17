@@ -140,12 +140,16 @@
 // #define RT_USING_DFS_MNTTABLE
 #define RT_USING_DFS_ELMFAT
 #define DFS_USING_WORKDIR
+// #define DFS_FILESYSTEMS_MAX             (2)     /* Max number of fs */
+// #define DFS_FD_MAX                      (4)     /* Max number of open file */
 #define RT_DFS_ELM_CODE_PAGE            (437)
+// #define RT_DFS_ELM_CODE_PAGE            936     /* (936) is wrong -_-! */
+// #define RT_DFS_ELM_LFN_UNICODE
 // #define RT_DFS_ELM_USE_EXFAT
-#ifdef RT_DFS_ELM_USE_EXFAT
+#if defined(RT_DFS_ELM_USE_EXFAT) || (RT_DFS_ELM_CODE_PAGE >= 900)
 #define RT_DFS_ELM_USE_LFN              (2)
 #define RT_DFS_ELM_MAX_LFN              (255)
-#endif /* RT_DFS_ELM_USE_EXFAT */
+#endif /* defined(RT_DFS_ELM_USE_EXFAT) || (RT_DFS_ELM_CODE_PAGE >= 900) */
 #endif /* CONFIG_USING_SPISD */
 
 /* Other Options */

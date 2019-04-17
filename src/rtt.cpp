@@ -200,9 +200,9 @@ void arduino_thread_entry(void *param) {
         (void)elm_init();
         #endif
         if (dfs_mount(SD_NAME, "/", "elm", 0, 0))
-            rt_kprintf("[ERR] Mount %s failed!\n", SD_NAME);
+            rt_kprintf("! Mount %s failed!\n", SD_NAME);
         else
-            rt_kprintf("[INFO] Mount %s to \"/\"\n", SD_NAME);
+            rt_kprintf("+ Mount %s to \"/\"\n", SD_NAME);
     #endif
 
     /* run Arduino loop here */

@@ -1,6 +1,8 @@
 /*---------------------------------------------------------------------------/
 /  FatFs Functional Configurations
 /---------------------------------------------------------------------------*/
+#include "rtconfig.h"   /* RTT config */
+
 
 #define FFCONF_DEF	86604	/* Revision ID */
 
@@ -101,7 +103,7 @@
 */
 
 
-#if RT_DFS_ELM_USE_LFN  /* RTT config */
+#ifdef RT_DFS_ELM_USE_LFN   /* RTT config */
 #define FF_USE_LFN		RT_DFS_ELM_USE_LFN
 #define FF_MAX_LFN		RT_DFS_ELM_MAX_LFN
 #else
@@ -127,7 +129,7 @@
 
 
 #ifdef RT_DFS_ELM_LFN_UNICODE  /* RTT config */
-#define FF_LFN_UNICODE	1
+#define FF_LFN_UNICODE	2
 #else
 #define FF_LFN_UNICODE	0
 #endif

@@ -6,7 +6,7 @@
  * @author  onelife <onelife.real[at]gmail.com>
  ******************************************************************************/
 #include "include/rtthread.h"
-#include "dfs_patch_header.h"
+
 
 FRESULT f_seekdir(
     DIR *dj,        /* Pointer to the open directory object */
