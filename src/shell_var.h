@@ -3,7 +3,9 @@
  * @brief   Arduino RT-Thread shell variables
  * @author  onelife <onelife.real[at]gmail.com>
  ******************************************************************************/
-#ifndef FINSH_USING_MSH_ONLY
+#ifdef FINSH_USING_MSH_ONLY
+#warning "Shell variables are not available for current CONFIG"
+#else
 ADD_SHELL_VAR(dummy, dummy variable for finsh, dummy, finsh_type_int)
 #endif
 

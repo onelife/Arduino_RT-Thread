@@ -26,7 +26,7 @@ void loop() {
     }
     rt_sprintf(buf, "%03d,%03d,%03d\n", sensorVal[0], sensorVal[1], sensorVal[2]);
   
-    // open log file.
+    // open log file (create if doesn't exist or append if already existed):
     dataFile = open("datalog.txt", O_CREAT | O_RDWR | O_ACCMODE | O_APPEND);
   
     // if file opened successfully, then write to it:

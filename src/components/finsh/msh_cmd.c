@@ -183,6 +183,8 @@ FINSH_FUNCTION_EXPORT_ALIAS(cmd_cd, __cmd_cd, Change the shell working directory
 
 int cmd_pwd(int argc, char **argv)
 {
+    (void)argc;
+    (void)argv;
     rt_kprintf("%s\n", working_directory);
     return 0;
 }
@@ -392,13 +394,19 @@ int cmd_ps(int argc, char **argv)
         list_module();
     else
 #endif
+    {
+        (void)argc;
+        (void)argv;
         list_thread();
+    }
     return 0;
 }
 FINSH_FUNCTION_EXPORT_ALIAS(cmd_ps, __cmd_ps, List threads in the system.);
 
 int cmd_time(int argc, char **argv)
 {
+    (void)argc;
+    (void)argv;
     return 0;
 }
 FINSH_FUNCTION_EXPORT_ALIAS(cmd_time, __cmd_time, Execute command with time.);
@@ -408,6 +416,8 @@ int cmd_free(int argc, char **argv)
 {
     extern void list_mem(void);
     extern void list_memheap(void);
+    (void)argc;
+    (void)argv;
 
 #ifdef RT_USING_MEMHEAP_AS_HEAP
     list_memheap();

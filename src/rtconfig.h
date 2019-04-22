@@ -12,60 +12,64 @@
 #define CONFIG_TICK_PER_SECOND          (1000)  /* Arduino */
 
 #ifndef CONFIG_HEAP_SIZE
-#define CONFIG_HEAP_SIZE                (20 * 1024)
+# define CONFIG_HEAP_SIZE               (20 * 1024)
 #endif
 
 #ifndef CONFIG_PRIORITY_MAX
-#define CONFIG_PRIORITY_MAX             (3)
+# define CONFIG_PRIORITY_MAX            (3)
 #endif
 
 #ifndef CONFIG_KERNEL_PRIORITY
-#define CONFIG_KERNEL_PRIORITY          (2)
+# define CONFIG_KERNEL_PRIORITY         (2)
 #endif
 
 #ifndef CONFIG_USING_CONSOLE
-#define CONFIG_USING_CONSOLE            (1)
+# define CONFIG_USING_CONSOLE           (1)
 #endif
 
 #ifndef CONFIG_USING_FINSH
-#define CONFIG_USING_FINSH              (CONFIG_USING_CONSOLE)
+# define CONFIG_USING_FINSH             (CONFIG_USING_CONSOLE)
+#endif
+
+#ifndef CONFIG_USING_MSH
+# define CONFIG_USING_MSH               (1)
 #endif
 
 #ifndef CONFIG_USING_SPISD
-#define CONFIG_USING_SPISD              (ARDUINO_ARCH_SAMD)
+# define CONFIG_USING_SPISD             (ARDUINO_ARCH_SAMD)
 #endif
 
 #if (CONFIG_USING_CONSOLE)
-#ifndef CONFIG_SERIAL_DEVICE
-#define CONFIG_SERIAL_DEVICE            (Serial)
-#endif
+# ifndef CONFIG_SERIAL_DEVICE
+#  define CONFIG_SERIAL_DEVICE          (Serial)
+# endif
 #endif /* CONFIG_USING_CONSOLE */
 
 #if (CONFIG_USING_SPISD)
-#define CONFIG_USING_SPI1               (1)
-#ifndef CONFIG_SD_CS_PIN
-#ifdef ARDUINO_SAMD_MKRZERO
-#define CONFIG_SD_CS_PIN                (SDCARD_SS_PIN)
-#else
-#error "Please define CONFIG_SD_CS_PIN!"
-#endif /* ARDUINO_SAMD_MKRZERO */
-#endif /* CONFIG_SD_CS_PIN */
+# define CONFIG_USING_SPI1              (1)
+# ifndef CONFIG_SD_CS_PIN
+#  ifdef ARDUINO_SAMD_MKRZERO
+#   define CONFIG_SD_CS_PIN             (SDCARD_SS_PIN)
+#  else
+#   error "Please define CONFIG_SD_CS_PIN!"
+#  endif /* ARDUINO_SAMD_MKRZERO */
+# endif /* CONFIG_SD_CS_PIN */
 
-#ifndef CONFIG_SD_SPI_CHANNEL
-#ifdef ARDUINO_SAMD_MKRZERO
-#define CONFIG_SD_SPI_CHANNEL           1   /* (1) is wrong -_-! */
-#else
-#error "Please define CONFIG_SD_SPI_CHANNEL!"
-#endif /* ARDUINO_SAMD_MKRZERO */
-#endif /* CONFIG_SD_SPI_CHANNEL */
+# ifndef CONFIG_SD_SPI_CHANNEL
+#  ifdef ARDUINO_SAMD_MKRZERO
+#   define CONFIG_SD_SPI_CHANNEL        1   /* (1) is wrong -_-! */
+#  else
+#   error "Please define CONFIG_SD_SPI_CHANNEL!"
+#  endif /* ARDUINO_SAMD_MKRZERO */
+# endif /* CONFIG_SD_SPI_CHANNEL */
 #endif /* CONFIG_USING_SPISD */
 
 #ifndef CONFIG_USING_SPI0
-#define CONFIG_USING_SPI0               (0)
+# define CONFIG_USING_SPI0              (0)
 #endif
 
 #ifndef CONFIG_USING_SPI1
-#define CONFIG_USING_SPI1               (0)
+# define CONFIG_USING_SPI1              (0)
 #endif
 
 /* Debug Options */
@@ -86,13 +90,13 @@
 
 /* Arduino Thread Options */
 #ifndef CONFIG_ARDUINO_STACK_SIZE
-#define CONFIG_ARDUINO_STACK_SIZE       (4 * 1024)
+# define CONFIG_ARDUINO_STACK_SIZE      (4 * 1024)
 #endif
 #ifndef CONFIG_ARDUINO_PRIORITY
-#define CONFIG_ARDUINO_PRIORITY         (RT_THREAD_PRIORITY_MAX >> 1)
+# define CONFIG_ARDUINO_PRIORITY        (RT_THREAD_PRIORITY_MAX >> 1)
 #endif
 #ifndef CONFIG_ARDUINO_TICK
-#define CONFIG_ARDUINO_TICK             (16)
+# define CONFIG_ARDUINO_TICK            (16)
 #endif
 
 /* Timer Options */
@@ -119,36 +123,39 @@
 
 /* Console Options */
 #if (CONFIG_USING_CONSOLE)
-#define RT_USING_CONSOLE
-#define RT_CONSOLEBUF_SIZE              (128)
+# define RT_USING_CONSOLE
+# define RT_CONSOLEBUF_SIZE             (128)
 #endif /* CONFIG_USING_CONSOLE */
 
 /* FinSH Options */
 #if (CONFIG_USING_FINSH)
 #define RT_USING_FINSH
-// #define FINSH_USING_SYMTAB           /* Not supported as no access to linker script */
+# if (CONFIG_USING_MSH)
+#  define FINSH_USING_MSH
+#  define FINSH_USING_MSH_ONLY
+# endif
 #define FINSH_USING_DESCRIPTION
 #define FINSH_USING_HISTORY
 #define FINSH_THREAD_PRIORITY           (20)
 #define FINSH_THREAD_STACK_SIZE         (4 * 1024)
-// #define FINSH_USING_MSH
+// # define FINSH_USING_SYMTAB             /* Not supported as no access to linker script */
 #endif /* CONFIG_USING_FINSH */
 
 /* DFS Options */
 #if (CONFIG_USING_SPISD)
-#define RT_USING_DFS
-// #define RT_USING_DFS_MNTTABLE
-#define RT_USING_DFS_ELMFAT
-#define DFS_USING_WORKDIR
-// #define DFS_FILESYSTEMS_MAX             (2)     /* Max number of fs */
-// #define DFS_FD_MAX                      (4)     /* Max number of open file */
-#define RT_DFS_ELM_CODE_PAGE            437     /* (xxx) is wrong -_-! */
-// #define RT_DFS_ELM_LFN_UNICODE
-// #define RT_DFS_ELM_USE_EXFAT
-#if defined(RT_DFS_ELM_USE_EXFAT) || (RT_DFS_ELM_CODE_PAGE >= 900)
-#define RT_DFS_ELM_USE_LFN              (2)
-#define RT_DFS_ELM_MAX_LFN              (255)
-#endif /* defined(RT_DFS_ELM_USE_EXFAT) || (RT_DFS_ELM_CODE_PAGE >= 900) */
+# define RT_USING_DFS
+// # define RT_USING_DFS_MNTTABLE
+# define RT_USING_DFS_ELMFAT
+# define DFS_USING_WORKDIR
+// # define DFS_FILESYSTEMS_MAX             (2)     /* Max number of fs */
+// # define DFS_FD_MAX                      (4)     /* Max number of open file */
+# define RT_DFS_ELM_CODE_PAGE           437     /* (xxx) is wrong -_-! */
+// # define RT_DFS_ELM_LFN_UNICODE
+// # define RT_DFS_ELM_USE_EXFAT
+# if defined(RT_DFS_ELM_USE_EXFAT) || (RT_DFS_ELM_CODE_PAGE >= 900)
+#  define RT_DFS_ELM_USE_LFN            (2)
+#  define RT_DFS_ELM_MAX_LFN            (255)
+# endif /* defined(RT_DFS_ELM_USE_EXFAT) || (RT_DFS_ELM_CODE_PAGE >= 900) */
 #endif /* CONFIG_USING_SPISD */
 
 /* Other Options */

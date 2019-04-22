@@ -15,7 +15,7 @@
 
 #include "msh.h"
 #include "finsh.h"
-#include <shell.h>
+#include "shell.h"
 
 #ifdef RT_USING_DFS
 #include "components/dfs/include/dfs_posix.h"
@@ -67,6 +67,9 @@ FINSH_FUNCTION_EXPORT_ALIAS(msh_enter, msh, use module shell);
 
 int msh_help(int argc, char **argv)
 {
+    (void)argc;
+    (void)argv;
+
     rt_kprintf("RT-Thread shell commands:\n");
     {
         struct finsh_syscall *index;
@@ -340,7 +343,7 @@ static int _msh_exec_lwp(char *cmd, rt_size_t length)
 
 int msh_exec(char *cmd, rt_size_t length)
 {
-    int cmd_ret;
+    int cmd_ret = -1;
 
     /* strim the beginning of command */
     while (*cmd  == ' ' || *cmd == '\t')
