@@ -8,7 +8,7 @@
 
 #include "include/rtthread.h"
 #ifdef RT_USING_DFS
-#include "components/dfs/include/dfs_posix.h"
+# include "components/dfs/include/dfs_posix.h"
 #endif
 
 

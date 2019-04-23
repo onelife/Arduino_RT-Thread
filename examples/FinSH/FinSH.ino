@@ -18,7 +18,7 @@
 // state=0
 // led(id, state)
 
-// NOTES: When using FinSH with MSH (CONFIG_USING_MSH == 1)
+// NOTES: When using FinSH with MSH (CONFIG_USING_MSH == 1, the default config)
 // - please append the following line to "shell_cmd.h" (without //)
 // ADD_MSH_CMD(led, Turn on/off builtin LED, led, rt_uint32_t, rt_uint32_t id, rt_uint8_t state)
 // Due to MSH doesn't support shell variables, "ADD_SHELL_VAR" has no effect

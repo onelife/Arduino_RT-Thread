@@ -25,21 +25,32 @@ extern "C" {
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
-#ifdef BSP_SPI_DEBUG
-#define spi_debug(format, args...)  rt_kprintf(format, ##args)
-#else
-#define spi_debug(format, args...)
-#endif
+#ifdef RT_USING_ULOG
+# ifdef BSP_SPI_DEBUG
+#  define LOG_LVL                   LOG_LVL_DBG
+# else
+#  define LOG_LVL                   LOG_LVL_INFO
+# endif
+# define LOG_TAG                    "SPI"
+# include "components/utilities/ulog/ulog.h"
+#else /* RT_USING_ULOG */
+# define LOG_E                      rt_kprintf
+# ifdef BSP_SPI_DEBUG
+#  define LOG_D(format, args...)    rt_kprintf(format "\n", ##args)
+# else
+#  define LOG_D(format, args...)
+# endif
+#endif /* RT_USING_ULOG */
 
 #if CONFIG_USING_SPI0
-#define SPI0                        SPI
+# define SPI0                       SPI
 #endif
 #define SPI_NAME(ch)                "SPI"#ch
 #define SPI_CTX(idx)                spi_ctx[idx]
 #define SPI_DEV(ctx)                ((SPIClass *)((ctx)->ldev))
-#define SPI_START(ctx)              spi_debug("SPI%d: START\n", ctx->chn); \
+#define SPI_START(ctx)              LOG_D("[SPI%d] START", ctx->chn); \
                                     SPI_DEV(ctx)->beginTransaction(ctx->set)
-#define SPI_STOP(ctx)               spi_debug("SPI%d: STOP\n", ctx->chn); \
+#define SPI_STOP(ctx)               LOG_D("[SPI%d] STOP", ctx->chn); \
                                     SPI_DEV(ctx)->endTransaction()
 #define SPI_TX(ctx, data)           (void)SPI_DEV(ctx)->transfer((rt_uint8_t)data)
 #define SPI_RX(ctx)                 SPI_DEV(ctx)->transfer(0xff)
@@ -47,7 +58,7 @@ extern "C" {
 if (target != ctx->spd) { \
     ctx->set = SPISettings(target, MSBFIRST, SPI_MODE0); \
     ctx->spd = target; \
-    spi_debug("SPI%d: speed=%d\n", ctx->chn, target); \
+    LOG_D("[SPI%d] speed=%d", ctx->chn, target); \
 }
 
 /* Private variables ---------------------------------------------------------*/
@@ -62,7 +73,7 @@ static rt_bool_t wait_idle(struct bsp_spi_contex *ctx) {
         if (0xff == SPI_RX(ctx)) break;
     }
 
-    spi_debug("SPI%d: wait %d\n", ctx->chn, i);
+    LOG_D("[SPI%d] wait %d", ctx->chn, i);
     return (i < SPI_DEFAULT_LIMIT);
 }
 
@@ -73,7 +84,7 @@ static rt_bool_t wait_token(struct bsp_spi_contex *ctx, rt_uint8_t token) {
         if (token == SPI_RX(ctx)) break;
     }
 
-    spi_debug("SPI%d: wait token %d\n", ctx->chn, i);
+    LOG_D("[SPI%d] wait token %d", ctx->chn, i);
     return (i < SPI_DEFAULT_LIMIT);
 }
 
@@ -86,11 +97,11 @@ static rt_err_t bsp_spi_open(rt_device_t dev, rt_uint16_t oflag) {
         if (RT_EOK != ret) break;
 
         ctx->dev.open_flag = oflag & RT_DEVICE_OFLAG_MASK;
-        spi_debug("SPI%d: open with flag %x\n", ctx->chn, oflag);
+        LOG_D("[SPI%d] open with flag %x", ctx->chn, oflag);
     } while (0);
 
     if (RT_EOK != ret) {
-        spi_debug("SPI%d err: open failed [%08x]\n", ctx->chn, ret);
+        LOG_D("[SPI%d E] open failed [%08x]", ctx->chn, ret);
     }
     return ret;
 }
@@ -103,11 +114,11 @@ static rt_err_t bsp_spi_close(rt_device_t dev) {
         ret = rt_mutex_release(&ctx->lok);
         if (RT_EOK != ret) break;
 
-        spi_debug("SPI%d: closed\n", ctx->chn);
+        LOG_D("[SPI%d] closed", ctx->chn);
     } while (0);
 
     if (RT_EOK != ret) {
-        spi_debug("SPI%d err: close failed [%08x]\n", ctx->chn, ret);
+        LOG_D("[SPI%d E] close failed [%08x]", ctx->chn, ret);
     }
     return ret;
 }
@@ -134,7 +145,7 @@ static rt_size_t bsp_spi_read(rt_device_t dev, rt_off_t token, void *buf,
 
         if (RT_NULL == buf) {
             /* dummy read */
-            spi_debug("SPI%d: dummy read [%d]\n", ctx->chn, size);
+            LOG_D("[SPI%d] dummy read [%d]", ctx->chn, size);
             SPI_START(ctx);
             for (i = 0; i < size; i++) (void)SPI_RX(ctx);
             SPI_STOP(ctx);
@@ -161,24 +172,24 @@ static rt_size_t bsp_spi_read(rt_device_t dev, rt_off_t token, void *buf,
             if (i >= SPI_DEFAULT_RETRY) {
                 SPI_STOP(ctx);
                 err = -RT_EBUSY;
-                spi_debug("SPI%d err: read busy\n", ctx->chn);
+                LOG_D("[SPI%d E] read busy", ctx->chn);
                 break;
             }
 
             /* send instruction */
-            spi_debug("SPI%d: tx ins [%d]\n", ctx->chn, inst_len);
+            LOG_D("[SPI%d] tx ins [%d]", ctx->chn, inst_len);
             for (i = 0; i < inst_len; i++)
                 SPI_TX(ctx, *(inst_ptr + i));
 
             /* receive data */
-            spi_debug("SPI%d: rx data [%d]\n", ctx->chn, size);
+            LOG_D("[SPI%d] rx data [%d]", ctx->chn, size);
             if (0 != token) {
                 for (i = 0; i < SPI_DEFAULT_RETRY; i++)
                     if (wait_token(ctx, (rt_uint8_t)token)) break;
                 if (i >= SPI_DEFAULT_RETRY) {
                     SPI_STOP(ctx);
                     err = -RT_EIO;
-                    spi_debug("SPI%d err: no token\n", ctx->chn);
+                    LOG_D("[SPI%d E] no token", ctx->chn);
                     break;
                 }
             }
@@ -237,17 +248,17 @@ static rt_size_t bsp_spi_write(rt_device_t dev, rt_off_t pos, const void *buf,
         if (i >= SPI_DEFAULT_RETRY) {
             SPI_STOP(ctx);
             err = -RT_EBUSY;
-            spi_debug("SPI%d err: write busy\n", ctx->chn);
+            LOG_D("[SPI%d E] write busy", ctx->chn);
             break;
         }
 
         /* send instruction */
-        spi_debug("SPI%d: tx ins [%d]\n", ctx->chn, inst_len);
+        LOG_D("[SPI%d] tx ins [%d]", ctx->chn, inst_len);
         for (i = 0; i < inst_len; i++)
             SPI_TX(ctx, *(inst_ptr + i));
 
         /* send data */
-        spi_debug("SPI%d: tx data [%d]\n", ctx->chn, size);
+        LOG_D("[SPI%d] tx data [%d]", ctx->chn, size);
         for (i = 0; i < size; i++)
             SPI_TX(ctx, *(tx_buf + i));
         SPI_STOP(ctx);
@@ -382,11 +393,11 @@ rt_err_t bsp_hw_spi_init(void) {
         if (RT_EOK != ret) break;
 
         SPI_DEV(&SPI_CTX(i))->begin();
-        spi_debug("SPI%d: h/w init ok!\n", chn);
+        LOG_D("[SPI%d] h/w init ok!", chn);
     }
 
     if (RT_EOK != ret)
-        rt_kprintf("SPI%d err: h/w init failed!\n", chn);
+        LOG_E("[SPI%d E] h/w init failed!", chn);
 
     return ret;
 }

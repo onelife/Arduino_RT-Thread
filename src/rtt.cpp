@@ -153,23 +153,39 @@ extern "C" {
 
 extern "C" {
     #if CONFIG_USING_SPI0 || CONFIG_USING_SPI1
-    #include "components/arduino/drv_spi.h"
+    # include "components/arduino/drv_spi.h"
     #endif
     #if CONFIG_USING_SPISD
-    #include "components/arduino/drv_spisd.h"
+    # include "components/arduino/drv_spisd.h"
     #endif
     #if CONFIG_USING_FINSH
-    #include "components/finsh/shell.h"
+    # include "components/finsh/shell.h"
     #endif
     #ifdef RT_USING_DFS
-    #include "components/dfs/include/dfs.h"
-    #include "components/dfs/include/dfs_fs.h"
-    #include "components/dfs/filesystems/elmfat/dfs_elm.h"
+    # include "components/dfs/include/dfs.h"
+    # include "components/dfs/include/dfs_fs.h"
+    # include "components/dfs/filesystems/elmfat/dfs_elm.h"
     #endif
+    #ifdef RT_USING_ULOG
+    # define LOG_TAG "RTT"
+    # include "components/utilities/ulog/ulog.h"
+    #else
+    # define LOG_E(format, args...) rt_kprintf(format "\n", ##args)
+    # define LOG_I(format, args...) rt_kprintf(format "\n", ##args)
+    #endif
+    #ifdef ULOG_BACKEND_USING_CONSOLE
+    extern int ulog_console_backend_init(void);
+    #endif
+
 }
 
 /* Driver initialization */
 void rt_driver_init(void) {
+    #if (CONFIG_USING_CONSOLE)
+        SERIAL_DEVICE.begin(9600);
+        while (!SERIAL_DEVICE);
+    #endif
+
     #if CONFIG_USING_SPI0 || CONFIG_USING_SPI1
         rt_err_t ret = bsp_hw_spi_init();
         RT_ASSERT(RT_EOK == ret);
@@ -186,24 +202,53 @@ void rt_high_driver_init(void) {
     #endif
 }
 
+/* Component initialization */
+void rt_components_init(void) {
+    /* INIT_BOARD_EXPORT */
+    rt_high_driver_init();
+
+    /* INIT_PREV_EXPORT */
+    #ifdef RT_USING_DFS
+        (void)dfs_init();
+    #endif
+    #ifdef ULOG_BACKEND_USING_CONSOLE
+        (void)ulog_console_backend_init();
+    #elif defined(RT_USING_ULOG)
+        (void)ulog_init();
+    #endif
+
+    /* INIT_DEVICE_EXPORT */
+
+    /* INIT_COMPONENT_EXPORT */
+    #ifdef RT_USING_DFS_ELMFAT
+        (void)elm_init();
+    #endif
+
+    /* INIT_ENV_EXPORT */
+    #ifdef RT_USING_DFS_MNTTABLE
+        // dfs_mount_table
+    #elif defined(RT_USING_DFS) && defined(RT_USING_DFS_ELMFAT)
+        if (dfs_mount(SD_NAME, "/", "elm", 0, 0)) {
+            LOG_E("[E] Mount " SD_NAME " failed!");
+        } else {
+            LOG_I("Mount " SD_NAME " to \"/\"");
+        }
+    #endif
+
+    /* INIT_APP_EXPORT */
+    #if CONFIG_USING_FINSH
+        arduino_serial_init();
+        rt_console_set_device(SERIAL_NAME);
+        finsh_system_init();
+    #endif
+}
+
 /* Arduino thread */
 void arduino_thread_entry(void *param) {
     (void)param;
 
-    /* initialize high level driver */
-    rt_high_driver_init();
-
     /* initialize components */
-    #ifdef RT_USING_DFS
-        (void)dfs_init();
-        #ifdef RT_USING_DFS_ELMFAT
-        (void)elm_init();
-        #endif
-        if (dfs_mount(SD_NAME, "/", "elm", 0, 0))
-            rt_kprintf("! Mount %s failed!\n", SD_NAME);
-        else
-            rt_kprintf("+ Mount %s to \"/\"\n", SD_NAME);
-    #endif
+    rt_components_init();
 
     /* run Arduino loop here */
     while (1) {
@@ -271,14 +316,9 @@ void RT_Thread::begin(void) {
     /* init scheduler */
     rt_system_scheduler_init();
 
-    #if (CONFIG_USING_CONSOLE)
-        SERIAL_DEVICE.begin(9600);
-        while (!SERIAL_DEVICE);
-        #if CONFIG_USING_FINSH
-            arduino_serial_init();
-            rt_console_set_device(SERIAL_NAME);
-            finsh_system_init();
-        #endif
+    #ifdef RT_USING_SIGNALS
+        /* init signal */
+        // rt_system_signal_init();
     #endif
 
     /* init driver */

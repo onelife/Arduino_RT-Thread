@@ -73,6 +73,17 @@ rt_mutex_release			KEYWORD2
 fsync						KEYWORD2
 
 #######################################
+# uLog
+#######################################
+LOG_E						KEYWORD2
+LOG_W						KEYWORD2
+LOG_I						KEYWORD2
+LOG_D						KEYWORD2
+LOG_RAW						KEYWORD2
+LOG_HEX						KEYWORD2
+ASSERT						KEYWORD2
+
+#######################################
 # Instances (KEYWORD2)
 #######################################
 RT_T		KEYWORD2
@@ -80,13 +91,25 @@ RT_T		KEYWORD2
 #######################################
 # Constants (LITERAL1)
 #######################################
+
+#######################################
+# User Config
+#######################################
 CONFIG_HEAP_SIZE			LITERAL1
 CONFIG_PRIORITY_MAX			LITERAL1
 CONFIG_KERNEL_PRIORITY		LITERAL1
 CONFIG_USING_CONSOLE		LITERAL1
 CONFIG_USING_FINSH			LITERAL1
 CONFIG_SERIAL_DEVICE		LITERAL1
+
+#######################################
+# Type
+#######################################
 RT_NULL						LITERAL1
+
+#######################################
+# Error
+#######################################
 RT_EOK						LITERAL1
 RT_ERROR					LITERAL1
 RT_ETIMEOUT					LITERAL1
@@ -98,7 +121,20 @@ RT_EBUSY					LITERAL1
 RT_EIO						LITERAL1
 RT_EINTR					LITERAL1
 RT_EINVAL					LITERAL1
+
+#######################################
+# IPC
+#######################################
 RT_IPC_FLAG_FIFO			LITERAL1
 RT_IPC_FLAG_PRIO			LITERAL1
 RT_WAITING_FOREVER			LITERAL1
 RT_WAITING_NO				LITERAL1
+
+#######################################
+# uLog
+#######################################
+LOG_LVL_ASSERT				LITERAL1
+LOG_LVL_ERROR				LITERAL1
+LOG_LVL_WARNING				LITERAL1
+LOG_LVL_INFO				LITERAL1
+LOG_LVL_DBG					LITERAL1

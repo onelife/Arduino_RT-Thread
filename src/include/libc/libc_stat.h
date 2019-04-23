@@ -9,7 +9,7 @@
 
 #include <rtconfig.h>
 
-#if defined(RT_USING_NEWLIB)
+#if defined(RT_USING_NEWLIB) || defined(CONFIG_ARDUINO)
 /* use header file of newlib */
 #include <sys/stat.h>
 
@@ -40,9 +40,6 @@
 #define S_ISVTX              0001000
 
 #define S_ISDIR(m)           (((m) & S_IFMT) == S_IFDIR)
-
-#elif defined(CONFIG_ARDUINO) && defined(ARDUINO_ARCH_SAM)
-#include <sys/stat.h>
 
 #else
 #define S_IFMT               00170000

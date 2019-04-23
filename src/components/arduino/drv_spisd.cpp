@@ -26,23 +26,35 @@ extern "C" {
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
-#ifdef BSP_SD_DEBUG
-#define sd_debug(format, args...)       rt_kprintf(format, ##args)
-#else
-#define sd_debug(format, args...)
-#endif
-#define SD_CS_PIN                       CONFIG_SD_CS_PIN
-#define SD_CS_INIT()                    pinMode(SD_CS_PIN, OUTPUT); \
-                                        digitalWrite(SD_CS_PIN, HIGH)
-#define SD_CS(en)                       digitalWrite(SD_CS_PIN, en ? LOW : HIGH)
-#define _NUM_TO_STR(n)                  #n
-#define _CH_TO_STR(ch)                  _NUM_TO_STR(ch)
-#define SD_LOWER_DEVICE_NAME            "SPI" _CH_TO_STR(CONFIG_SD_SPI_CHANNEL)
-#define SD_CTX()                        (&sd_ctx)
-#define SD_RESTART_TIMER(ctx)           (ctx->tout) = RT_FALSE; \
-                                        rt_timer_start(&ctx->tmr)
-#define SD_STOP_TIMER(ctx)              rt_timer_stop(&ctx->tmr)
-#define SD_IS_TIMEOUT(ctx)              (ctx->tout)
+#ifdef RT_USING_ULOG
+# ifdef BSP_SD_DEBUG
+#  define LOG_LVL                   LOG_LVL_DBG
+# else
+#  define LOG_LVL                   LOG_LVL_INFO
+# endif
+# define LOG_TAG                    "SD"
+# include "components/utilities/ulog/ulog.h"
+#else /* RT_USING_ULOG */
+# define LOG_E                      rt_kprintf
+# ifdef BSP_SD_DEBUG
+#  define LOG_D(format, args...)    rt_kprintf(format "\n", ##args)
+# else
+#  define LOG_D(format, args...)
+# endif
+#endif /* RT_USING_ULOG */
+
+#define SD_CS_PIN                   CONFIG_SD_CS_PIN
+#define SD_CS_INIT()                pinMode(SD_CS_PIN, OUTPUT); \
+                                    digitalWrite(SD_CS_PIN, HIGH)
+#define SD_CS(en)                   digitalWrite(SD_CS_PIN, en ? LOW : HIGH)
+#define _NUM_TO_STR(n)              #n
+#define _CH_TO_STR(ch)              _NUM_TO_STR(ch)
+#define SD_LOWER_DEVICE_NAME        "SPI" _CH_TO_STR(CONFIG_SD_SPI_CHANNEL)
+#define SD_CTX()                    (&sd_ctx)
+#define SD_RESTART_TIMER(ctx)       (ctx->tout) = RT_FALSE; \
+                                    rt_timer_start(&ctx->tmr)
+#define SD_STOP_TIMER(ctx)          rt_timer_stop(&ctx->tmr)
+#define SD_IS_TIMEOUT(ctx)          (ctx->tout)
 
 /* Private constants ---------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -72,7 +84,7 @@ static rt_uint16_t _sd_send_cmd(struct bsp_sd_contex *ctx, rt_uint8_t cmd,
 
     /* Expect (x+1+4) bytes for CRC, (x+1+19) bytes for CSD/CID */
     rt_memset(buf_res, 0xff, sizeof(buf_res));
-    sd_debug("SPISD: send cmd %d (%08x)\n", cmd, arg);
+    LOG_D("[SD] send cmd %d (%08x)", cmd, arg);
 
     do {
         rt_size_t read_len;
@@ -115,14 +127,18 @@ static rt_uint16_t _sd_send_cmd(struct bsp_sd_contex *ctx, rt_uint8_t cmd,
         read_len = rt_device_read(ctx->ldev, 0, buf_ins, sizeof(buf_res));
         if (0 == read_len) {
             #ifdef BSP_SD_DEBUG
+            # ifdef RT_USING_ULOG
+            LOG_HEX("cmd_reply", 16, buf_res, sizeof(buf_res));
+            # else
             rt_uint8_t *tmp = buf_res;
             rt_uint32_t j;
             for (j = 0; j < sizeof(buf_res); j += 8)
-                sd_debug("%02x %02x %02x %02x %02x %02x %02x %02x\n",
+                LOG_D("%02x %02x %02x %02x %02x %02x %02x %02x",
                     tmp[j], tmp[j+1], tmp[j+2], tmp[j+3],
                     tmp[j+4], tmp[j+5], tmp[j+6], tmp[j+7]);
+            # endif
             #endif
-            sd_debug("SPISD err: send cmd failed! [%d]\n", read_len);
+            LOG_D("[SD E] send cmd failed! [%d]", read_len);
             break;
         }
 
@@ -134,7 +150,7 @@ static rt_uint16_t _sd_send_cmd(struct bsp_sd_contex *ctx, rt_uint8_t cmd,
         for (i = 0; i < sizeof(buf_res); i++) {
             if (0xff != buf_res[i]) {
                 if (skip) {
-                    sd_debug("SPISD: skip %02x (@ %d)\n", buf_res[i], i);
+                    LOG_D("[SD] skip %02x (@ %d)", buf_res[i], i);
                     skip = RT_FALSE;
                     continue;
                 }
@@ -145,7 +161,7 @@ static rt_uint16_t _sd_send_cmd(struct bsp_sd_contex *ctx, rt_uint8_t cmd,
                 break;
             }
         }
-        sd_debug("SPISD: response %02x (@ %d)\n", ret, i);
+        LOG_D("[SD] response %02x (@ %d)", ret, i);
         i++;
         
         /* copy trailing data */
@@ -157,13 +173,13 @@ static rt_uint16_t _sd_send_cmd(struct bsp_sd_contex *ctx, rt_uint8_t cmd,
                     if (buf_res[i] == 0xfe) break;
                 /* check if valid */
                 if (sizeof(buf_res) <= i) {
-                    sd_debug("SPISD err: no CSD/CID!\n");
+                    LOG_D("[SD E] no CSD/CID!");
                     ret = 0xffff;
                     break;
                 }
                 i++;
-                sd_debug("SPISD: CSD/CID %02x (@ %d)\n", buf_res[i], i);
-                sd_debug("SPISD: read CRC %02x %02x\n", buf_res[i+len_trl],
+                LOG_D("[SD] CSD/CID %02x (@ %d)", buf_res[i], i);
+                LOG_D("[SD] read CRC %02x %02x", buf_res[i+len_trl],
                     buf_res[i+len_trl+1]);
             }
             /* copy data */
@@ -207,7 +223,7 @@ static rt_err_t sd_read_block(struct bsp_sd_contex *ctx, void *buf,
     rt_uint8_t buf_res[8];
     rt_err_t ret;
 
-    sd_debug("SPISD: read block [%d]\n", size);
+    LOG_D("[SD] read block [%d]", size);
     do {
         rt_size_t read_len;
 
@@ -225,7 +241,7 @@ static rt_err_t sd_read_block(struct bsp_sd_contex *ctx, void *buf,
         /* read with token (starting indicator) 0xfe */
         read_len = rt_device_read(ctx->ldev, 0xfe, buf_ins, size);
         if (0 == read_len) {
-            sd_debug("SPISD err: read data failed!\n");
+            LOG_D("[SD E] read data failed!");
             ret = -RT_EIO;
             break;
         }
@@ -241,17 +257,17 @@ static rt_err_t sd_read_block(struct bsp_sd_contex *ctx, void *buf,
 
         read_len = rt_device_read(ctx->ldev, 0, buf_ins, sizeof(buf_res));
         if (0 == read_len) {
-            sd_debug("SPISD err: read CRC failed!\n");
+            LOG_D("[SD E] read CRC failed!");
             ret = -RT_EIO;
             break;
         }
-        sd_debug("SPISD: read CRC %x %x\n", buf_res[0], buf_res[1]);
+        LOG_D("[SD] read CRC %x %x", buf_res[0], buf_res[1]);
 
         ret = RT_EOK;
     } while(0);
 
     if (RT_EOK != ret) {
-        sd_debug("SPISD err: read block failed! [%02x]\n", ret);
+        LOG_D("[SD E] read block failed! [%02x]", ret);
     }
     return ret;
 }
@@ -285,14 +301,18 @@ static rt_size_t sd_read(struct bsp_sd_contex *ctx, void *buf, rt_size_t size) {
     ret = rt_device_read(ctx->ldev, 0, buf_read, size);
     if (0 == ret) {
         #ifdef BSP_SD_DEBUG
+        # ifdef RT_USING_ULOG
+        LOG_HEX("read_data", 16, (rt_uint8_t *)buf, size);
+        # else
         rt_uint8_t *tmp = (rt_uint8_t *)buf;
         rt_uint32_t j;
         for (j = 0; j < size; j += 8)
-            sd_debug("%02x %02x %02x %02x %02x %02x %02x %02x\n",
+            LOG_D("%02x %02x %02x %02x %02x %02x %02x %02x",
                 tmp[j], tmp[j+1], tmp[j+2], tmp[j+3],
                 tmp[j+4], tmp[j+5], tmp[j+6], tmp[j+7]);
+        # endif
         #endif
-        sd_debug("SPISD err: read raw failed! [%d]\n", ret);
+        LOG_D("[SD E] read raw failed! [%d]", ret);
     }
 
     return ret;
@@ -319,7 +339,7 @@ static rt_err_t sd_write_block(struct bsp_sd_contex *ctx, void *buf,
     rt_uint8_t buf_res[8];
     rt_err_t ret;
 
-    sd_debug("SPISD: write block [%02x]\n", token);
+    LOG_D("[SD] write block [%02x]", token);
     do {
         rt_size_t read_len, write_len;
         rt_uint8_t i;
@@ -332,7 +352,7 @@ static rt_err_t sd_write_block(struct bsp_sd_contex *ctx, void *buf,
         SD_STOP_TIMER(ctx);
 
         if (0xff != buf_res[sizeof(buf_res) - 1]) {
-            sd_debug("SPISD err: SD busy b/f write! [%02x]\n", \
+            LOG_D("[SD E] SD busy b/f write! [%02x]", \
                 buf_res[sizeof(buf_res) - 1]);
             ret = -RT_EBUSY;
             break;
@@ -355,7 +375,7 @@ static rt_err_t sd_write_block(struct bsp_sd_contex *ctx, void *buf,
 
             write_len = rt_device_write(ctx->ldev, 0, buf_ins, SD_SECTOR_SIZE);
             if (0 == write_len) {
-                sd_debug("SPISD err: write data failed!\n");
+                LOG_D("[SD E] write data failed!");
                 ret = -RT_EIO;
                 break;
             }
@@ -372,7 +392,7 @@ static rt_err_t sd_write_block(struct bsp_sd_contex *ctx, void *buf,
 
             read_len = rt_device_read(ctx->ldev, 0, buf_ins, sizeof(buf_res));
             if (0 == read_len) {
-                sd_debug("SPISD err: write CRC failed!\n");
+                LOG_D("[SD E] write CRC failed!");
                 ret = -RT_EIO;
                 break;
             }
@@ -385,7 +405,7 @@ static rt_err_t sd_write_block(struct bsp_sd_contex *ctx, void *buf,
                 }
             }
             if (0x05 != buf_res[i]) {
-                sd_debug("SPISD err: write is not accepted! (%02x @ %d)\n", \
+                LOG_D("[SD E] write is not accepted! (%02x @ %d)", \
                     buf_res[i], i);
                 ret = -RT_EIO;
                 break;
@@ -407,7 +427,7 @@ static rt_err_t sd_write_block(struct bsp_sd_contex *ctx, void *buf,
 
             write_len = rt_device_write(ctx->ldev, 0, buf_ins, 0);
             if (0 != write_len) {
-                sd_debug("SPISD err: write token failed!\n");
+                LOG_D("[SD E] write token failed!");
                 ret = -RT_EIO;
                 break;
             }
@@ -420,7 +440,7 @@ static rt_err_t sd_write_block(struct bsp_sd_contex *ctx, void *buf,
             SD_STOP_TIMER(ctx);
 
             if (0xff != buf_res[sizeof(buf_res) - 1]) {
-                sd_debug("SPISD err: SD busy a/f write! [%02x]\n",
+                LOG_D("[SD E] SD busy a/f write! [%02x]",
                     buf_res[sizeof(buf_res) - 1]);
                 ret = -RT_EBUSY;
                 break;
@@ -431,7 +451,7 @@ static rt_err_t sd_write_block(struct bsp_sd_contex *ctx, void *buf,
     } while (0);
 
     if (RT_EOK != ret) {
-        sd_debug("SPISD err: write block failed! [%02x]\n", ret);
+        LOG_D("[SD E] write block failed! [%02x]", ret);
     }
     return ret;
 }
@@ -517,14 +537,14 @@ static rt_err_t bsp_spiSd_init(rt_device_t dev) {
         }
         ctx->type = type;
 
-        sd_debug("SPISD: init ok, card type %x\n", ctx->type);
+        LOG_D("[SD] init ok, card type %x", ctx->type);
     } while (0);
 
     SD_CS(0);
     rt_device_close(ctx->ldev);
 
     if (RT_EOK != ret) {
-        sd_debug("SPISD err: init failed! (%08x)\n", ret);
+        LOG_D("[SD E] init failed! (%08x)", ret);
     }
     return ret;
 }
@@ -541,7 +561,7 @@ static rt_size_t bsp_spiSd_read(rt_device_t dev, rt_off_t sector, void *buf,
         rt_set_errno(err);
         return 0;
     }
-    sd_debug("SPISD: read sect %d [%d]\n", sector, count);
+    LOG_D("[SD] read sect %d [%d]", sector, count);
 
     /* convert to byte address if necessary */
     if (!(ctx->type & CT_BLOCK))
@@ -558,15 +578,15 @@ static rt_size_t bsp_spiSd_read(rt_device_t dev, rt_off_t sector, void *buf,
         if (1 == cnt) {
             /* single block read */
             cmd = CMD17;
-            sd_debug("SPISD: read single block\n");
+            LOG_D("[SD] read single block");
         } else {
             /* multiple block read */
             cmd = CMD18;
-            sd_debug("SPISD: read multiple blocks\n");
+            LOG_D("[SD] read multiple blocks");
         }
 
         if (sd_send_cmd(ctx, cmd, sector, RT_NULL)) {
-            sd_debug("SPISD err: read cmd failed!\n");
+            LOG_D("[SD E] read cmd failed!");
             err = -RT_EIO;
             break;
         }
@@ -592,10 +612,10 @@ static rt_size_t bsp_spiSd_read(rt_device_t dev, rt_off_t sector, void *buf,
     rt_device_close(ctx->ldev);
     if (RT_EOK != err) {
         rt_set_errno(err);
-        sd_debug("SPISD err: read failed! [%08x]\n", err);
+        LOG_D("[SD E] read failed! [%08x]", err);
     }
 
-    sd_debug("SPISD: read ok! [%d]\n", ret);
+    LOG_D("[SD] read ok! [%d]", ret);
     return ret;
 }
 
@@ -611,7 +631,7 @@ static rt_size_t bsp_spiSd_write(rt_device_t dev, rt_off_t sector,
         rt_set_errno(err);
         return 0;
     };
-    sd_debug("SPISD: write sect %d [%d]\n", sector, count);
+    LOG_D("[SD] write sect %d [%d]", sector, count);
 
     /* convert to byte address if needed */
     if (!(ctx->type & CT_BLOCK))
@@ -629,12 +649,12 @@ static rt_size_t bsp_spiSd_write(rt_device_t dev, rt_off_t sector,
             /* single block write */
             cmd = CMD24;
             token = 0xfe;
-            sd_debug("SPISD: write single block\n");
+            LOG_D("[SD] write single block");
         } else {
             /* multiple block write */
             cmd = CMD25;
             token = 0xfc;
-            sd_debug("SPISD: write multiple blocks\n");
+            LOG_D("[SD] write multiple blocks");
             if (ctx->type & CT_SDC)
                 if (sd_send_cmd(ctx, ACMD23, count, RT_NULL)) {
                     err = -RT_EOK;
@@ -643,7 +663,7 @@ static rt_size_t bsp_spiSd_write(rt_device_t dev, rt_off_t sector,
         }
 
         if (sd_send_cmd(ctx, cmd, sector, RT_NULL)) {
-            sd_debug("SPISD err: write command error!\n");
+            LOG_D("[SD E] write command error!");
             err = -RT_EOK;
             break;
         }
@@ -670,10 +690,10 @@ static rt_size_t bsp_spiSd_write(rt_device_t dev, rt_off_t sector,
     rt_device_close(ctx->ldev);
     if (RT_EOK != err) {
         rt_set_errno(err);
-        sd_debug("SPISD err: write failed! [%08x]\n", err);
+        LOG_D("[SD E] write failed! [%08x]", err);
     }
 
-    sd_debug("SPISD: write ok! [%d]\n", ret);
+    LOG_D("[SD] write ok! [%d]", ret);
     return ret;
 }
 
@@ -682,12 +702,12 @@ static rt_err_t bsp_spiSd_control(rt_device_t dev, rt_int32_t cmd, void *buf) {
     rt_uint8_t *buf_res = RT_NULL;
     rt_err_t ret;
 
-    sd_debug("SPISD: control %08x\n", cmd);
+    LOG_D("[SD] control %08x", cmd);
     switch (cmd) {
     case RT_DEVICE_CTRL_BLK_GETGEOME:
         ret = rt_device_open(ctx->ldev, RT_DEVICE_OFLAG_RDWR);
         if (RT_EOK != ret) break;
-        sd_debug("SPISD: control open\n");
+        LOG_D("[SD] control open");
 
         do {
             struct rt_device_blk_geometry *geometry = \
@@ -698,7 +718,7 @@ static rt_err_t bsp_spiSd_control(rt_device_t dev, rt_int32_t cmd, void *buf) {
             /* allocate buf */
             buf_res = (rt_uint8_t *)rt_malloc(SD_BLOCK_SIZE_CSD);
             if (RT_NULL == buf_res) {
-                sd_debug("SPISD: no memory for RX buf\n");
+                LOG_D("[SD] no memory for RX buf");
                 ret = -RT_ENOMEM;
                 break;
             }
@@ -706,7 +726,7 @@ static rt_err_t bsp_spiSd_control(rt_device_t dev, rt_int32_t cmd, void *buf) {
             SD_CS(1);
             /* get number of sectors on the disk (32 bits) */
             if (sd_send_cmd(ctx, CMD9, 0x00000000, buf_res)) {
-                sd_debug("SPISD: get CSD failed!\n");
+                LOG_D("[SD] get CSD failed!");
                 ret = -RT_EIO;
                 break;
             }
@@ -739,18 +759,18 @@ static rt_err_t bsp_spiSd_control(rt_device_t dev, rt_int32_t cmd, void *buf) {
                 /* allocate buf */
                 buf_res = (rt_uint8_t *)rt_malloc(SD_BLOCK_SIZE_SDSTAT);
                 if (RT_NULL == buf_res) {
-                    sd_debug("SPISD: no memory for RX buf\n");
+                    LOG_D("[SD] no memory for RX buf");
                     ret = -RT_ENOMEM;
                     break;
                 }
                 /* SDv2 */
                 if (sd_send_cmd(ctx, ACMD13, 0x00000000, RT_NULL)) {
-                    sd_debug("SPISD: get SD status failed!\n");
+                    LOG_D("[SD] get SD status failed!");
                     ret = -RT_EIO;
                     break;
                 }
                 if (sd_read_block(ctx, buf_res, SD_BLOCK_SIZE_SDSTAT)) {
-                    sd_debug("SPISD: read SD status failed!\n");
+                    LOG_D("[SD] read SD status failed!");
                     ret = -RT_EIO;
                     break;
                 }
@@ -761,13 +781,13 @@ static rt_err_t bsp_spiSd_control(rt_device_t dev, rt_int32_t cmd, void *buf) {
                 /* allocate buf */
                 buf_res = (rt_uint8_t *)rt_malloc(SD_BLOCK_SIZE_CSD);
                 if (RT_NULL == buf_res) {
-                    sd_debug("SPISD: no memory for RX buf\n");
+                    LOG_D("[SD] no memory for RX buf");
                     ret = -RT_ENOMEM;
                     break;
                 }
                 /* SDv1 or MMC */
                 if (sd_send_cmd(ctx, CMD9, 0x00000000, buf_res)) {
-                    sd_debug("SPISD: Get CSD failed!\n");
+                    LOG_D("[SD] Get CSD failed!");
                     ret = -RT_EIO;
                     break;
                 }
@@ -807,7 +827,7 @@ static rt_err_t bsp_spiSd_control(rt_device_t dev, rt_int32_t cmd, void *buf) {
     }
 
     if (RT_EOK != ret) {
-        sd_debug("SPISD err: control failed! [%08x]\n", ret);
+        LOG_D("[SD E] control failed! [%08x]", ret);
     }
     return ret;
 }
@@ -876,22 +896,22 @@ rt_err_t bsp_hw_spiSd_init(void) {
         /* get lower level device */
         ldev = rt_device_find(SD_LOWER_DEVICE_NAME);
         if (RT_NULL == ldev) {
-            sd_debug("SPISD: can't find device %s!\n", SD_LOWER_DEVICE_NAME);
+            LOG_D("[SD] can't find device %s!", SD_LOWER_DEVICE_NAME);
             ret = -RT_ERROR;
             break;
         }
-        sd_debug("SPISD: find device %s\n", SD_LOWER_DEVICE_NAME);
+        LOG_D("[SD] find device %s", SD_LOWER_DEVICE_NAME);
 
         ret = bsp_spiSd_contex_init(SD_CTX(), SD_NAME, ldev);
         if (RT_EOK != ret) break;
 
         SD_CS_INIT();
 
-        sd_debug("SPISD: h/w init ok\n");
+        LOG_D("[SD] h/w init ok");
     } while (0);
 
     if (RT_EOK != ret)
-        rt_kprintf("SPISD: h/w init failed!\n");
+        LOG_E("[SD] h/w init failed!");
 
     return ret;
 }

@@ -35,6 +35,10 @@
 # define CONFIG_USING_MSH               (1)
 #endif
 
+#ifndef CONFIG_USING_LOG
+# define CONFIG_USING_LOG               (1)
+#endif
+
 #ifndef CONFIG_USING_SPISD
 # define CONFIG_USING_SPISD             (ARDUINO_ARCH_SAMD)
 #endif
@@ -44,6 +48,24 @@
 #  define CONFIG_SERIAL_DEVICE          (Serial)
 # endif
 #endif /* CONFIG_USING_CONSOLE */
+
+#if (CONFIG_USING_LOG)
+# define RT_USING_ULOG
+# define ULOG_OUTPUT_LVL                (LOG_LVL_DBG)
+# define ULOG_ASSERT_ENABLE
+# define ULOG_USING_COLOR
+// # define ULOG_USING_ISR_LOG
+// # define ULOG_USING_SYSLOG
+// # define ULOG_USING_FILTER
+# define ULOG_OUTPUT_TIME
+// # define ULOG_TIME_USING_TIMESTAMP
+# define ULOG_OUTPUT_LEVEL
+# define ULOG_OUTPUT_TAG
+# define ULOG_OUTPUT_THREAD_NAME
+# if (CONFIG_USING_CONSOLE)
+#  define ULOG_BACKEND_USING_CONSOLE
+# endif 
+#endif /* CONFIG_USING_LOG */
 
 #if (CONFIG_USING_SPISD)
 # define CONFIG_USING_SPI1              (1)
@@ -158,7 +180,9 @@
 # endif /* defined(RT_DFS_ELM_USE_EXFAT) || (RT_DFS_ELM_CODE_PAGE >= 900) */
 #endif /* CONFIG_USING_SPISD */
 
-/* Other Options */
-// #define RT_USING_COMPONENTS_INIT     /* Not supported as no access to linker script */
+/* Unsupported Options */
+#ifdef RT_USING_COMPONENTS_INIT
+# undef RT_USING_COMPONENTS_INIT        /* Reason: no access to linker script */
+#endif
 
 #endif /* __RTCONFIG_H__ */
