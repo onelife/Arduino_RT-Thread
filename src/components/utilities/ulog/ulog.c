@@ -10,7 +10,7 @@
 
 #include <stdarg.h>
 #include "ulog.h"
-#include "rthw.h"
+#include "include/rthw.h"
 
 #ifdef ULOG_USING_SYSLOG
 #include <syslog.h>

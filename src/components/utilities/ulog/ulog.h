@@ -11,7 +11,7 @@
 #ifndef _ULOG_H_
 #define _ULOG_H_
 
-#include <rtthread.h>
+#include "include/rtthread.h"
 #include "ulog_def.h"
 
 #ifdef __cplusplus

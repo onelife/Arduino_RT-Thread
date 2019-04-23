@@ -9,8 +9,8 @@
  */
 
 #include <stdarg.h>
-#include <ulog.h>
-#include <rthw.h>
+#include "../ulog.h"
+#include "include/rthw.h"
 #include "syslog.h"
 
 #ifdef ULOG_OUTPUT_FLOAT

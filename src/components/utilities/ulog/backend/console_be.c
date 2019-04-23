@@ -8,8 +8,8 @@
  * 2018-09-04     armink       the first version
  */
 
-#include <rthw.h>
-#include <ulog.h>
+#include "include/rthw.h"
+#include "../ulog.h"
 
 #ifdef ULOG_BACKEND_USING_CONSOLE
 
@@ -23,6 +23,10 @@ void ulog_console_backend_output(struct ulog_backend *backend, rt_uint32_t level
         const char *log, size_t len)
 {
     rt_device_t dev = rt_console_get_device();
+    (void)backend;
+    (void)level;
+    (void)tag;
+    (void)is_raw;
 
 #ifdef RT_USING_DEVICE
     if (dev == RT_NULL)
