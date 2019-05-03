@@ -34,12 +34,12 @@
 #ifndef RT_DBG_H__
 #define RT_DBG_H__
 
-#include <rtconfig.h>
+#include "rtconfig.h"
 
 #if defined(RT_USING_ULOG) && defined(DBG_ENABLE)
 /* using ulog compatible with rtdbg  */
-#include <ulog.h>
-#else
+#include "components/utilities/ulog/ulog.h"
+#else /* defined(RT_USING_ULOG) && defined(DBG_ENABLE) */
 
 /* DEBUG level */
 #define DBG_ERROR           0
@@ -136,7 +136,7 @@
 
 #define dbg_raw(...)         rt_kprintf(__VA_ARGS__);
 
-#else
+#else /* DBG_ENABLE */
 #define dbg_log(level, fmt, ...)
 #define dbg_here
 #define dbg_enter

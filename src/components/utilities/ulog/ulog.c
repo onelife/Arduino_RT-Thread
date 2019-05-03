@@ -531,12 +531,13 @@ void ulog_voutput(rt_uint32_t level, const char *tag, rt_bool_t newline, const c
     log_len = syslog_formater(log_buf, level, tag, newline, format, args);
 #endif /* ULOG_USING_SYSLOG */
 
+    /* add string end sign */
+    log_buf[log_len] = '\0';
+
 #ifdef ULOG_USING_FILTER
     /* keyword filter */
     if (ulog.filter.keyword[0] != '\0')
     {
-        /* add string end sign */
-        log_buf[log_len] = '\0';
         /* find the keyword */
         if (!rt_strstr(log_buf, ulog.filter.keyword))
         {

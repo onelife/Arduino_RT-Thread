@@ -24,7 +24,7 @@ ADD_MSH_CMD(ps, list threads, cmd_ps, int, int argc, char **argv)
 #ifdef RT_USING_HEAP
 ADD_FINSH_CMD(list_mem, show memory usage info, list_mem, void, void)
 ADD_MSH_CMD(free, show memory usage info, cmd_free, int, int argc, char **argv)
-# ifdef RT_USING_MEMTRACE
+# if defined(RT_MEM_STATS) && defined (RT_USING_MEMTRACE)
 ADD_MSH_CMD(mcheck, check memory, memcheck, int, void)
 ADD_MSH_CMD(mtrace, show memory trace info, memtrace, int, int argc, char **argv)
 # endif

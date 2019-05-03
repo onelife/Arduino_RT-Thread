@@ -40,7 +40,7 @@ extern r_type fn(__VA_ARGS__);
 #  define ADD_SHELL_CMD(prefix, name, desc, fn, r_type, ...) \
     {prefix #name, (syscall_func)fn},
 # endif /* FINSH_USING_DESCRIPTION */
-struct finsh_syscall _syscall_table[] = {
+static struct finsh_syscall _syscall_table[] = {
     #include "shell_cmd.h"
 };
 # undef ADD_SHELL_CMD
@@ -95,7 +95,7 @@ extern type var;
 #   define ADD_SHELL_VAR(name, desc, var, type) \
     {#name, type, &var},
 #  endif
-struct finsh_sysvar _sysvar_table[] = {
+static struct finsh_sysvar _sysvar_table[] = {
     #include "shell_var.h"
 };
 #  undef ADD_SHELL_VAR

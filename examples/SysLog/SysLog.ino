@@ -20,6 +20,7 @@ void rt_setup(void) {
 
 void setup() {
   RT_T.begin();
+  // no code here as RT_T.begin() never return
 }
 
 // this function will be called by "Arduino" thread

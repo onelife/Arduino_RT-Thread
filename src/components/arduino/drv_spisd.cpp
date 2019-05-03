@@ -35,7 +35,7 @@ extern "C" {
 # define LOG_TAG                    "SD"
 # include "components/utilities/ulog/ulog.h"
 #else /* RT_USING_ULOG */
-# define LOG_E                      rt_kprintf
+# define LOG_E(format, args...)     rt_kprintf(format "\n", ##args)
 # ifdef BSP_SD_DEBUG
 #  define LOG_D(format, args...)    rt_kprintf(format "\n", ##args)
 # else
@@ -89,7 +89,6 @@ static rt_uint16_t _sd_send_cmd(struct bsp_sd_contex *ctx, rt_uint8_t cmd,
     do {
         rt_size_t read_len;
         rt_uint8_t len_trl, i, j;
-        rt_bool_t skip;
 
         /*  build cmd inst
             - inst len: 6
@@ -138,32 +137,33 @@ static rt_uint16_t _sd_send_cmd(struct bsp_sd_contex *ctx, rt_uint8_t cmd,
                     tmp[j+4], tmp[j+5], tmp[j+6], tmp[j+7]);
             # endif
             #endif
-            LOG_D("[SD E] send cmd failed! [%d]", read_len);
+            LOG_W("[SD E] send cmd failed! [%d]", read_len);
             break;
         }
-
-        /* skip one byte when stop reading */
-        skip = (cmd == CMD12) ? RT_TRUE : RT_FALSE;
 
         /* find valid response: the response is read back within command
            response time (NCR), 0 to 8 bytes for SDC, 1 to 8 bytes for MMC */
         for (i = 0; i < sizeof(buf_res); i++) {
             if (0xff != buf_res[i]) {
-                if (skip) {
-                    LOG_D("[SD] skip %02x (@ %d)", buf_res[i], i);
-                    skip = RT_FALSE;
-                    continue;
+                if (cmd == CMD12) {
+                    /* may skip one byte when stop reading */
+                    if (((i + 1u) < sizeof(buf_res)) && \
+                        (0xff != buf_res[i + 1u])) {
+                        LOG_D("[SD] >>>skip %02x (@ %d)", buf_res[i], i);
+                        i++;
+                    }
                 }
-                if (cmd == (ACMD13 & 0x7f))
+                if (cmd == (ACMD13 & 0x7f)) {
                     ret = (rt_uint16_t)buf_res[i];  /* R2 response */
-                else
+                } else {
                     ret = (rt_uint8_t)buf_res[i];
+                }
                 break;
             }
         }
         LOG_D("[SD] response %02x (@ %d)", ret, i);
         i++;
-        
+
         /* copy trailing data */
         if ((0xffff != ret) && len_trl && trail) {
             /* read CSD/CID */
@@ -173,7 +173,7 @@ static rt_uint16_t _sd_send_cmd(struct bsp_sd_contex *ctx, rt_uint8_t cmd,
                     if (buf_res[i] == 0xfe) break;
                 /* check if valid */
                 if (sizeof(buf_res) <= i) {
-                    LOG_D("[SD E] no CSD/CID!");
+                    LOG_W("[SD E] no CSD/CID!");
                     ret = 0xffff;
                     break;
                 }
@@ -220,7 +220,7 @@ rt_uint16_t sd_send_cmd(struct bsp_sd_contex *ctx, rt_uint8_t cmd,
 static rt_err_t sd_read_block(struct bsp_sd_contex *ctx, void *buf,
     rt_size_t size) {
     rt_uint8_t buf_ins[RT_ALIGN(5, RT_ALIGN_SIZE)];
-    rt_uint8_t buf_res[8];
+    // rt_uint8_t buf_res[8];
     rt_err_t ret;
 
     LOG_D("[SD] read block [%d]", size);
@@ -241,11 +241,15 @@ static rt_err_t sd_read_block(struct bsp_sd_contex *ctx, void *buf,
         /* read with token (starting indicator) 0xfe */
         read_len = rt_device_read(ctx->ldev, 0xfe, buf_ins, size);
         if (0 == read_len) {
-            LOG_D("[SD E] read data failed!");
+            LOG_W("[SD E] read data failed!");
             ret = -RT_EIO;
             break;
         }
 
+        /* it seems if read a response by two separate calls, some bytes will be 
+           ate by SPI library.
+         */
+        #if 0
         /*  build read CRC inst
             - inst len: 0
             - rx buf addr: offset align with RT_ALIGN_SIZE
@@ -257,17 +261,18 @@ static rt_err_t sd_read_block(struct bsp_sd_contex *ctx, void *buf,
 
         read_len = rt_device_read(ctx->ldev, 0, buf_ins, sizeof(buf_res));
         if (0 == read_len) {
-            LOG_D("[SD E] read CRC failed!");
+            LOG_W("[SD E] read CRC failed!");
             ret = -RT_EIO;
             break;
         }
         LOG_D("[SD] read CRC %x %x", buf_res[0], buf_res[1]);
+        #endif
 
         ret = RT_EOK;
     } while(0);
 
     if (RT_EOK != ret) {
-        LOG_D("[SD E] read block failed! [%02x]", ret);
+        LOG_W("[SD E] read block failed! [%02x]", ret);
     }
     return ret;
 }
@@ -312,7 +317,7 @@ static rt_size_t sd_read(struct bsp_sd_contex *ctx, void *buf, rt_size_t size) {
                 tmp[j+4], tmp[j+5], tmp[j+6], tmp[j+7]);
         # endif
         #endif
-        LOG_D("[SD E] read raw failed! [%d]", ret);
+        LOG_W("[SD E] read raw failed! [%d]", ret);
     }
 
     return ret;
@@ -352,7 +357,7 @@ static rt_err_t sd_write_block(struct bsp_sd_contex *ctx, void *buf,
         SD_STOP_TIMER(ctx);
 
         if (0xff != buf_res[sizeof(buf_res) - 1]) {
-            LOG_D("[SD E] SD busy b/f write! [%02x]", \
+            LOG_W("[SD E] SD busy b/f write! [%02x]", \
                 buf_res[sizeof(buf_res) - 1]);
             ret = -RT_EBUSY;
             break;
@@ -375,7 +380,7 @@ static rt_err_t sd_write_block(struct bsp_sd_contex *ctx, void *buf,
 
             write_len = rt_device_write(ctx->ldev, 0, buf_ins, SD_SECTOR_SIZE);
             if (0 == write_len) {
-                LOG_D("[SD E] write data failed!");
+                LOG_W("[SD E] write data failed!");
                 ret = -RT_EIO;
                 break;
             }
@@ -392,7 +397,7 @@ static rt_err_t sd_write_block(struct bsp_sd_contex *ctx, void *buf,
 
             read_len = rt_device_read(ctx->ldev, 0, buf_ins, sizeof(buf_res));
             if (0 == read_len) {
-                LOG_D("[SD E] write CRC failed!");
+                LOG_W("[SD E] write CRC failed!");
                 ret = -RT_EIO;
                 break;
             }
@@ -405,7 +410,7 @@ static rt_err_t sd_write_block(struct bsp_sd_contex *ctx, void *buf,
                 }
             }
             if (0x05 != buf_res[i]) {
-                LOG_D("[SD E] write is not accepted! (%02x @ %d)", \
+                LOG_W("[SD E] write is not accepted! (%02x @ %d)", \
                     buf_res[i], i);
                 ret = -RT_EIO;
                 break;
@@ -427,7 +432,7 @@ static rt_err_t sd_write_block(struct bsp_sd_contex *ctx, void *buf,
 
             write_len = rt_device_write(ctx->ldev, 0, buf_ins, 0);
             if (0 != write_len) {
-                LOG_D("[SD E] write token failed!");
+                LOG_W("[SD E] write token failed!");
                 ret = -RT_EIO;
                 break;
             }
@@ -440,7 +445,7 @@ static rt_err_t sd_write_block(struct bsp_sd_contex *ctx, void *buf,
             SD_STOP_TIMER(ctx);
 
             if (0xff != buf_res[sizeof(buf_res) - 1]) {
-                LOG_D("[SD E] SD busy a/f write! [%02x]",
+                LOG_W("[SD E] SD busy a/f write! [%02x]",
                     buf_res[sizeof(buf_res) - 1]);
                 ret = -RT_EBUSY;
                 break;
@@ -451,7 +456,7 @@ static rt_err_t sd_write_block(struct bsp_sd_contex *ctx, void *buf,
     } while (0);
 
     if (RT_EOK != ret) {
-        LOG_D("[SD E] write block failed! [%02x]", ret);
+        LOG_W("[SD E] write block failed! [%02x]", ret);
     }
     return ret;
 }
@@ -544,7 +549,7 @@ static rt_err_t bsp_spiSd_init(rt_device_t dev) {
     rt_device_close(ctx->ldev);
 
     if (RT_EOK != ret) {
-        LOG_D("[SD E] init failed! (%08x)", ret);
+        LOG_W("[SD E] init failed! (%08x)", ret);
     }
     return ret;
 }
@@ -559,6 +564,7 @@ static rt_size_t bsp_spiSd_read(rt_device_t dev, rt_off_t sector, void *buf,
     err = rt_device_open(ctx->ldev, RT_DEVICE_OFLAG_RDWR);
     if (RT_EOK != err) {
         rt_set_errno(err);
+        LOG_W("[SD] read err %x", err);
         return 0;
     }
     LOG_D("[SD] read sect %d [%d]", sector, count);
@@ -586,7 +592,7 @@ static rt_size_t bsp_spiSd_read(rt_device_t dev, rt_off_t sector, void *buf,
         }
 
         if (sd_send_cmd(ctx, cmd, sector, RT_NULL)) {
-            LOG_D("[SD E] read cmd failed!");
+            LOG_W("[SD E] read cmd failed!");
             err = -RT_EIO;
             break;
         }
@@ -601,7 +607,7 @@ static rt_size_t bsp_spiSd_read(rt_device_t dev, rt_off_t sector, void *buf,
         /* stop transmission */
         if (CMD18 == cmd)
             if (sd_send_cmd(ctx, CMD12, 0x00000000, RT_NULL)) {
-                err = -RT_EOK;
+                err = -RT_EIO;
                 break;
             }
 
@@ -612,7 +618,7 @@ static rt_size_t bsp_spiSd_read(rt_device_t dev, rt_off_t sector, void *buf,
     rt_device_close(ctx->ldev);
     if (RT_EOK != err) {
         rt_set_errno(err);
-        LOG_D("[SD E] read failed! [%08x]", err);
+        LOG_W("[SD E] read failed! [%08x]", err);
     }
 
     LOG_D("[SD] read ok! [%d]", ret);
@@ -657,21 +663,21 @@ static rt_size_t bsp_spiSd_write(rt_device_t dev, rt_off_t sector,
             LOG_D("[SD] write multiple blocks");
             if (ctx->type & CT_SDC)
                 if (sd_send_cmd(ctx, ACMD23, count, RT_NULL)) {
-                    err = -RT_EOK;
+                    err = -RT_EIO;
                     break;
                 }
         }
 
         if (sd_send_cmd(ctx, cmd, sector, RT_NULL)) {
-            LOG_D("[SD E] write command error!");
-            err = -RT_EOK;
+            LOG_W("[SD E] write command error!");
+            err = -RT_EIO;
             break;
         }
 
         /* write data */
         do {
             if (sd_write_block(ctx, ptr, token)) {
-                err = -RT_EOK;
+                err = -RT_EIO;
                 break;
             }
             ptr += SD_SECTOR_SIZE;
@@ -679,7 +685,7 @@ static rt_size_t bsp_spiSd_write(rt_device_t dev, rt_off_t sector,
 
         /* stop transmission token */
         if (sd_write_block(ctx, RT_NULL, 0xfd)) {
-            err = -RT_EOK;
+            err = -RT_EIO;
             break;
         }
 
@@ -690,7 +696,7 @@ static rt_size_t bsp_spiSd_write(rt_device_t dev, rt_off_t sector,
     rt_device_close(ctx->ldev);
     if (RT_EOK != err) {
         rt_set_errno(err);
-        LOG_D("[SD E] write failed! [%08x]", err);
+        LOG_W("[SD E] write failed! [%08x]", err);
     }
 
     LOG_D("[SD] write ok! [%d]", ret);
@@ -827,7 +833,7 @@ static rt_err_t bsp_spiSd_control(rt_device_t dev, rt_int32_t cmd, void *buf) {
     }
 
     if (RT_EOK != ret) {
-        LOG_D("[SD E] control failed! [%08x]", ret);
+        LOG_W("[SD E] control failed! [%08x]", ret);
     }
     return ret;
 }

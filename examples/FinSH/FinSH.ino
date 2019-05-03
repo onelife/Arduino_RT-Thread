@@ -86,6 +86,7 @@ extern "C" {
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   RT_T.begin();
+  // no code here as RT_T.begin() never return
 }
 
 // this function will be called by "Arduino" thread

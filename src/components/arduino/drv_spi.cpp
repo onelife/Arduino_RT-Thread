@@ -34,7 +34,7 @@ extern "C" {
 # define LOG_TAG                    "SPI"
 # include "components/utilities/ulog/ulog.h"
 #else /* RT_USING_ULOG */
-# define LOG_E                      rt_kprintf
+# define LOG_E(format, args...)     rt_kprintf(format "\n", ##args)
 # ifdef BSP_SPI_DEBUG
 #  define LOG_D(format, args...)    rt_kprintf(format "\n", ##args)
 # else
@@ -101,7 +101,7 @@ static rt_err_t bsp_spi_open(rt_device_t dev, rt_uint16_t oflag) {
     } while (0);
 
     if (RT_EOK != ret) {
-        LOG_D("[SPI%d E] open failed [%08x]", ctx->chn, ret);
+        LOG_W("[SPI%d E] open failed [%08x]", ctx->chn, ret);
     }
     return ret;
 }
@@ -118,7 +118,7 @@ static rt_err_t bsp_spi_close(rt_device_t dev) {
     } while (0);
 
     if (RT_EOK != ret) {
-        LOG_D("[SPI%d E] close failed [%08x]", ctx->chn, ret);
+        LOG_W("[SPI%d E] close failed [%08x]", ctx->chn, ret);
     }
     return ret;
 }
@@ -172,7 +172,7 @@ static rt_size_t bsp_spi_read(rt_device_t dev, rt_off_t token, void *buf,
             if (i >= SPI_DEFAULT_RETRY) {
                 SPI_STOP(ctx);
                 err = -RT_EBUSY;
-                LOG_D("[SPI%d E] read busy", ctx->chn);
+                LOG_W("[SPI%d E] read busy", ctx->chn);
                 break;
             }
 
@@ -189,7 +189,7 @@ static rt_size_t bsp_spi_read(rt_device_t dev, rt_off_t token, void *buf,
                 if (i >= SPI_DEFAULT_RETRY) {
                     SPI_STOP(ctx);
                     err = -RT_EIO;
-                    LOG_D("[SPI%d E] no token", ctx->chn);
+                    LOG_W("[SPI%d E] no token", ctx->chn);
                     break;
                 }
             }
@@ -248,7 +248,7 @@ static rt_size_t bsp_spi_write(rt_device_t dev, rt_off_t pos, const void *buf,
         if (i >= SPI_DEFAULT_RETRY) {
             SPI_STOP(ctx);
             err = -RT_EBUSY;
-            LOG_D("[SPI%d E] write busy", ctx->chn);
+            LOG_W("[SPI%d E] write busy", ctx->chn);
             break;
         }
 

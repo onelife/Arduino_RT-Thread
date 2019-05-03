@@ -1,5 +1,5 @@
 /***************************************************************************//**
- * @file    rtt.h
+ * @file    log.h
  * @brief   Arduino RT-Thread library logger header
  * @author  onelife <onelife.real[at]gmail.com>
  ******************************************************************************/

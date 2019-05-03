@@ -301,7 +301,8 @@ void RT_Thread::begin(void) {
 
     #ifdef RT_USING_HEAP
         /* init heap */
-        rt_system_heap_init((void *)&rtt_heap, (void *)&rtt_heap[CONFIG_HEAP_SIZE-1]);
+        rt_system_heap_init((void *)&rtt_heap,
+            (void *)&rtt_heap[CONFIG_HEAP_SIZE-1]);
     #endif
 
     /* init tick */
@@ -343,7 +344,6 @@ void RT_Thread::begin(void) {
     rt_system_scheduler_start();
 
     /* never reach here */
-    return;
 }
 
 /* RT_Thread instance */
