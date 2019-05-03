@@ -8,11 +8,14 @@
  * 2010-11-17     yi.qiu      first version
  */
 
-#include <rtthread.h>
-#include <rtm.h>
+#include "include/rtthread.h"
 
-const char *dlerror(void)
-{
-	return "TODO";
+#ifdef RT_USING_MODULE
+
+
+const char *dlerror(void) {
+    return "TODO";
 }
 RTM_EXPORT(dlerror)
+
+#endif /* RT_USING_MODULE */

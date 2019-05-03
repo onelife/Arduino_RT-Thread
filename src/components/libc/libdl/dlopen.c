@@ -8,10 +8,11 @@
  * 2010-11-17      yi.qiu   first version
  */
 
-#include <rtthread.h>
-#include <rtm.h>
-#include <string.h>
+#include "include/rtthread.h"
 
+#ifdef RT_USING_MODULE
+
+#include <string.h>
 #include "dlmodule.h"
 
 #define MODULE_ROOT_DIR     "/modules"
@@ -62,3 +63,5 @@ void* dlopen(const char *filename, int flags)
     return (void*)module;
 }
 RTM_EXPORT(dlopen);
+
+#endif /* RT_USING_MODULE */

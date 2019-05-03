@@ -39,6 +39,10 @@
 # define CONFIG_USING_LOG               (1)
 #endif
 
+#ifndef CONFIG_USING_MODULE
+# define CONFIG_USING_MODULE            (0)
+#endif
+
 #ifndef CONFIG_USING_SPISD
 # define CONFIG_USING_SPISD             (ARDUINO_ARCH_SAMD)
 #endif
@@ -66,6 +70,11 @@
 #  define ULOG_BACKEND_USING_CONSOLE
 # endif 
 #endif /* CONFIG_USING_LOG */
+
+#if (CONFIG_USING_MODULE)
+# define RT_USING_MODULE
+# define IDLE_THREAD_STACK_SIZE         (512)
+#endif /* CONFIG_USING_MODULE */
 
 #if (CONFIG_USING_SPISD)
 # define CONFIG_USING_SPI1              (1)

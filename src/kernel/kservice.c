@@ -23,7 +23,7 @@
 #include "include/rthw.h"
 
 #ifdef RT_USING_MODULE
-#include <dlmodule.h>
+#include "components/libc/libdl/dlmodule.h"
 #endif
 
 /* use precision */

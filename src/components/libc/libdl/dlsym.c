@@ -8,8 +8,9 @@
  * 2010-11-17     yi.qiu      first version
  */
 
-#include <rtthread.h>
-#include <rtm.h>
+#include "include/rtthread.h"
+
+#ifdef RT_USING_MODULE
 
 #include "dlmodule.h"
 
@@ -31,3 +32,5 @@ void* dlsym(void *handle, const char* symbol)
     return RT_NULL;
 }
 RTM_EXPORT(dlsym)
+
+#endif /* RT_USING_MODULE */

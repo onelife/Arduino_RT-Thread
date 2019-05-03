@@ -11,8 +11,6 @@
 #ifndef RT_DL_MODULE_H__
 #define RT_DL_MODULE_H__
 
-#include <rtthread.h>
-
 #define RT_DLMODULE_STAT_INIT       0x00
 #define RT_DLMODULE_STAT_RUNNING    0x01
 #define RT_DLMODULE_STAT_CLOSING    0x02

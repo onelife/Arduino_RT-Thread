@@ -8,13 +8,16 @@
  * 2018/08/29     Bernard     first version
  */
 
-#include <rthw.h>
+#include "include/rtthread.h"
 
+#ifdef RT_USING_MODULE
+
+#include "include/rthw.h"
 #include "dlfcn.h"
 #include "dlmodule.h"
 #include "dlelf.h"
+#include "components/dfs/include/dfs_posix.h"
 
-#include <dfs_posix.h>
 
 #define DBG_SECTION_NAME    "DLMD"
 #define DBG_ENABLE          // enable debug macro
@@ -697,3 +700,5 @@ int list_module(void)
     return 0;
 }
 MSH_CMD_EXPORT(list_module, list modules in system);
+
+#endif /* RT_USING_MODULE */

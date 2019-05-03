@@ -8,7 +8,11 @@
  * 2018/08/29     Bernard     first version
  */
 
-#include "../dlmodule.h"
+#include "include/rtthread.h"
+
+#ifdef RT_USING_MODULE
+#ifdef __arm__
+
 #include "../dlelf.h"
 
 #ifdef __arm__
@@ -118,4 +122,6 @@ int dlmodule_relocate(struct rt_dlmodule *module, Elf32_Rel *rel, Elf32_Addr sym
 
     return 0;
 }
-#endif
+
+#endif /* __arm__ */
+#endif /* RT_USING_MODULE */

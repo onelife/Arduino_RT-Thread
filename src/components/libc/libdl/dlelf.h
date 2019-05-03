@@ -11,6 +11,8 @@
 #ifndef DL_ELF_H__
 #define DL_ELF_H__
 
+#include "dlmodule.h"
+
 typedef rt_uint8_t              Elf_Byte;
 
 typedef rt_uint32_t             Elf32_Addr;    /* Unsigned program address */
@@ -29,6 +31,7 @@ typedef rt_uint16_t             Elf32_Half;    /* Unsigned medium integer */
 #define SELFMAG                 4              /* size of magic */
 
 #define EI_CLASS                4              /* file class */
+#define EI_DATA                 5              /* data encoding */
 #define EI_NIDENT               16             /* Size of e_ident[] */
 
 /* e_ident[] file class */
@@ -56,8 +59,7 @@ typedef rt_uint16_t             Elf32_Half;    /* Unsigned medium integer */
 #define ET_CORE                 4              /* Core file */
 
 /* ELF Header */
-typedef struct elfhdr
-{
+typedef struct elfhdr {
     unsigned char e_ident[EI_NIDENT];          /* ELF Identification */
     Elf32_Half    e_type;                      /* object file type */
     Elf32_Half    e_machine;                   /* machine */
@@ -76,8 +78,7 @@ typedef struct elfhdr
 } Elf32_Ehdr;
 
 /* Section Header */
-typedef struct
-{
+typedef struct {
     Elf32_Word sh_name;                        /* name - index into section header
                                                   string table section */
     Elf32_Word sh_type;                        /* type */
@@ -116,8 +117,7 @@ typedef struct
 #define ELF_RTMSYMTAB           "RTMSymTab"
 
 /* Symbol Table Entry */
-typedef struct elf32_sym
-{
+typedef struct elf32_sym {
     Elf32_Word    st_name;                     /* name - index into string table */
     Elf32_Addr    st_value;                    /* symbol value */
     Elf32_Word    st_size;                     /* symbol size */
@@ -147,22 +147,18 @@ typedef struct elf32_sym
 #define STT_LOPROC              13             /* processor specific range */
 #define STT_HIPROC              15
 
-#define STN_UNDEF               0              /* undefined */
-
 #define ELF_ST_BIND(info)       ((info) >> 4)
 #define ELF_ST_TYPE(info)       ((info) & 0xf)
 #define ELF_ST_INFO(bind, type) (((bind)<<4)+((type)&0xf))
 
 /* Relocation entry with implicit addend */
-typedef struct
-{
+typedef struct {
     Elf32_Addr r_offset;                       /* offset of relocation */
     Elf32_Word r_info;                         /* symbol table index and type */
 } Elf32_Rel;
 
 /* Relocation entry with explicit addend */
-typedef struct
-{
+typedef struct {
     Elf32_Addr  r_offset;                      /* offset of relocation */
     Elf32_Word  r_info;                        /* symbol table index and type */
     Elf32_Sword r_addend;
@@ -172,6 +168,9 @@ typedef struct
 #define ELF32_R_SYM(i)          ((i) >> 8)
 #define ELF32_R_TYPE(i)         ((unsigned char) (i))
 #define ELF32_R_INFO(s,t)       (((s) << 8) + (unsigned char)(t))
+
+/* ELF32_R_SYM */
+#define STN_UNDEF               0
 
 /*
  * Relocation type for arm
@@ -207,8 +206,7 @@ typedef struct
 #define R_386_GOTPC             10
 
 /* Program Header */
-typedef struct
-{
+typedef struct {
     Elf32_Word p_type;                         /* segment type */
     Elf32_Off  p_offset;                       /* segment offset */
     Elf32_Addr p_vaddr;                        /* virtual address of segment */
@@ -218,6 +216,63 @@ typedef struct
     Elf32_Word p_flags;                        /* flags */
     Elf32_Word p_align;                        /* memory alignment */
 } Elf32_Phdr;
+
+/* d_tag */
+#define DT_NULL                 0
+#define DT_NEEDED               1
+#define DT_PLTRELSZ             2
+#define DT_PLTGOT               3
+#define DT_HASH                 4
+#define DT_STRTAB               5
+#define DT_SYMTAB               6
+#define DT_RELA                 7
+#define DT_RELASZ               8
+#define DT_RELAENT              9
+#define DT_STRSZ                10
+#define DT_SYMENT               11
+#define DT_INIT                 12
+#define DT_FINI                 13
+#define DT_SONAME               14
+#define DT_RPATH                15
+#define DT_SYMBOLIC             16
+#define DT_REL                  17
+#define DT_RELSZ                18
+#define DT_RELENT               19
+#define DT_PLTREL               20
+#define DT_DEBUG                21
+#define DT_TEXTREL              22
+#define DT_JMPREL               23
+#define DT_INIT_ARRAY           25
+#define DT_FINI_ARRAY           26
+#define DT_INIT_ARRAYSZ         27
+#define DT_FINI_ARRAYSZ         28
+#define DT_ENCODING             32
+#define OLD_DT_LOOS             0x60000000
+#define DT_LOOS                 0x6000000d
+#define DT_HIOS                 0x6ffff000
+#define DT_VALRNGLO             0x6ffffd00
+#define DT_VALRNGHI             0x6ffffdff
+#define DT_ADDRRNGLO            0x6ffffe00
+#define DT_ADDRRNGHI            0x6ffffeff
+#define DT_VERSYM               0x6ffffff0
+#define DT_RELACOUNT            0x6ffffff9
+#define DT_RELCOUNT             0x6ffffffa
+#define DT_FLAGS_1              0x6ffffffb
+#define DT_VERDEF               0x6ffffffc
+#define DT_VERDEFNUM            0x6ffffffd
+#define DT_VERNEED              0x6ffffffe
+#define DT_VERNEEDNUM           0x6fffffff
+#define OLD_DT_HIOS             0x6fffffff
+#define DT_LOPROC               0x70000000
+#define DT_HIPROC               0x7fffffff
+
+typedef struct {
+    Elf32_Sword d_tag;
+    union {
+        Elf32_Word d_val;
+        Elf32_Addr d_ptr;
+    } d_un;
+} Elf32_Dyn;
 
 /* p_type */
 #define PT_NULL                 0
@@ -244,7 +299,7 @@ typedef struct
 #define SHT_PROGBITS            1              /* program defined information */
 #define SHT_SYMTAB              2              /* symbol table section */
 #define SHT_STRTAB              3              /* string table section */
-#define SHT_RELA                4              /* relocation section with addends*/
+#define SHT_RELA                4              /* relocation section with addends */
 #define SHT_HASH                5              /* symbol hash table section */
 #define SHT_DYNAMIC             6              /* dynamic section */
 #define SHT_NOTE                7              /* note section */
@@ -258,6 +313,9 @@ typedef struct
 #define SHT_LOUSER              0x80000000     /* reserved range for application */
 #define SHT_HIUSER              0xffffffff     /* specific indexes */
 
+/* st_shndx */
+#define SHN_UNDEF               0              /* undefined */
+
 /* Section Attribute Flags - sh_flags */
 #define SHF_WRITE               0x1            /* Writable */
 #define SHF_ALLOC               0x2            /* occupies memory */
@@ -265,21 +323,25 @@ typedef struct
 #define SHF_MASKPROC            0xf0000000     /* reserved bits for processor */
 /* specific section attributes */
 
-#define IS_PROG(s)        (s.sh_type == SHT_PROGBITS)
-#define IS_NOPROG(s)      (s.sh_type == SHT_NOBITS)
-#define IS_REL(s)         (s.sh_type == SHT_REL)
-#define IS_RELA(s)        (s.sh_type == SHT_RELA)
-#define IS_ALLOC(s)       (s.sh_flags == SHF_ALLOC)
-#define IS_AX(s)          ((s.sh_flags & SHF_ALLOC) && (s.sh_flags & SHF_EXECINSTR))
-#define IS_AW(s)          ((s.sh_flags & SHF_ALLOC) && (s.sh_flags & SHF_WRITE))
+#define IS_PROG(sh)             (sh->sh_type == SHT_PROGBITS)
+#define IS_NOPROG(sh)           (sh->sh_type == SHT_NOBITS)
+#define IS_REL(sh)              (sh->sh_type == SHT_REL)
+#define IS_RELA(sh)             (sh->sh_type == SHT_RELA)
+#define IS_DYNSYM(sh)             (sh->sh_type == SHT_DYNSYM)
+#define IS_ALLOC(sh)            (sh->sh_flags == SHF_ALLOC)
+#define IS_AX(sh)               ((sh->sh_flags & SHF_ALLOC) && \
+                                 (sh->sh_flags & SHF_EXECINSTR))
+#define IS_AW(sh)               ((sh->sh_flags & SHF_ALLOC) && \
+                                 (sh->sh_flags & SHF_WRITE))
 
-#define elf_module        ((Elf32_Ehdr *)module_ptr)
-#define shdr              ((Elf32_Shdr *)((rt_uint8_t *)module_ptr + elf_module->e_shoff))
-#define phdr              ((Elf32_Phdr *)((rt_uint8_t *)module_ptr + elf_module->e_phoff))
 
-rt_err_t dlmodule_load_shared_object(struct rt_dlmodule* module, void *module_ptr);
-rt_err_t dlmodule_load_relocated_object(struct rt_dlmodule* module, void *module_ptr);
-
-int dlmodule_relocate(struct rt_dlmodule *module, Elf32_Rel *rel, Elf32_Addr sym_val);
+rt_err_t dlmodule_load_shared_object(int fd, Elf32_Ehdr *elf_hdr,
+    rt_dlmodule_t *module);
+#ifndef __arm__
+rt_err_t dlmodule_load_relocated_object(int fd, Elf32_Ehdr *elf_hdr,
+    rt_dlmodule_t *module);
+#endif
+Elf32_Addr dlmodule_relocate(rt_uint8_t rel_type, Elf32_Addr *where,
+    Elf32_Addr sym_val);
 
 #endif

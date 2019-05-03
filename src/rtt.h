@@ -14,7 +14,7 @@
 
 class RT_Thread {
  public:
-    void begin(void);
+    void begin(void) __attribute__((noreturn));
 
  private:
     char rtt_heap[CONFIG_HEAP_SIZE];

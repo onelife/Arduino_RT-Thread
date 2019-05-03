@@ -21,7 +21,7 @@
 #include "include/rtthread.h"
 
 #ifdef RT_USING_MODULE
-#include <dlmodule.h>
+#include "components/libc/libdl/dlmodule.h"
 #endif
 
 #if defined (RT_USING_HOOK)

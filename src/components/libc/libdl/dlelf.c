@@ -8,7 +8,10 @@
  * 2018/08/29     Bernard     first version
  */
 
-#include "dlmodule.h"
+#include "include/rtthread.h"
+
+#ifdef RT_USING_MODULE
+
 #include "dlelf.h"
 
 #define DBG_SECTION_NAME    "DLMD"
@@ -441,3 +444,6 @@ rt_err_t dlmodule_load_relocated_object(struct rt_dlmodule* module, void *module
 
     return RT_EOK;
 }
+
+
+#endif /* RT_USING_MODULE */

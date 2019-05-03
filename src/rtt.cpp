@@ -176,6 +176,9 @@ extern "C" {
     #ifdef ULOG_BACKEND_USING_CONSOLE
     extern int ulog_console_backend_init(void);
     #endif
+    #ifdef RT_USING_MODULE
+    # include "components/libc/libdl/dlmodule.h"
+    #endif
 
 }
 
@@ -222,6 +225,9 @@ void rt_components_init(void) {
     /* INIT_COMPONENT_EXPORT */
     #ifdef RT_USING_DFS_ELMFAT
         (void)elm_init();
+    #endif
+    #ifdef RT_USING_MODULE
+        // (void)rt_system_dlmodule_init();
     #endif
 
     /* INIT_ENV_EXPORT */
@@ -344,6 +350,7 @@ void RT_Thread::begin(void) {
     rt_system_scheduler_start();
 
     /* never reach here */
+    while (1);
 }
 
 /* RT_Thread instance */

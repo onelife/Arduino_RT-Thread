@@ -8,8 +8,9 @@
  * 2010-11-17     yi.qiu       first version
  */
 
-#include <rtthread.h>
-#include <rtm.h>
+#include "include/rtthread.h"
+
+#ifdef RT_USING_MODULE
 
 #include "dlmodule.h"
 
@@ -37,3 +38,5 @@ int dlclose(void *handle)
     return RT_TRUE;
 }
 RTM_EXPORT(dlclose)
+
+#endif /* RT_USING_MODULE */
