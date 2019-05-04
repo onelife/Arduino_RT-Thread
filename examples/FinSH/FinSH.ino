@@ -1,32 +1,47 @@
+/***************************************************************************//**
+ * @file    FinSH.ino
+ * @brief   Arduino RT-Thread library "FinSH" example
+ * @author  onelife <onelife.real[at]gmail.com>
+ ******************************************************************************/
 #include <rtt.h>
 
-// ATTENTION: Please append the new shell command and variable to "shell_cmd.h" and "shell_var.h"
+/* ATTENTION
+    Please append your new shell commands and variables to "shell_cmd.h" and
+    "shell_var.h".
+ */
 
-// NOTES: When using FinSH without MSH (CONFIG_USING_MSH == 0)
-// - please append the following line to "shell_cmd.h" (without //)
-// ADD_FINSH_CMD(led, Turn on/off builtin LED, led, rt_uint32_t, rt_uint32_t id, rt_uint8_t state)
-//
-// - and append the following 2 lines to "shell_var.h" (without //)
-// ADD_SHELL_VAR(id, LED ID, led_id, finsh_type_uint)
-// ADD_SHELL_VAR(state, LED state, led_state, finsh_type_uchar)
-//
-// After upload, send the following command through "Serial Monitor" and check the result.
-// led(0, 1)
-// led(0, 0)
-// led(id, state)
-// state
-// state=0
-// led(id, state)
+/* NOTES
+    When using FinSH without MSH (CONFIG_USING_FINSH == 1 &&
+    CONFIG_USING_MSH == 0):
+    - please append the following line to "shell_cmd.h":
+      ADD_FINSH_CMD(led, Turn on/off builtin LED, led, rt_uint32_t, rt_uint32_t id, rt_uint8_t state)
+    - and append the following 2 lines to "shell_var.h"
+      ADD_SHELL_VAR(id, LED ID, led_id, finsh_type_uint)
+      ADD_SHELL_VAR(state, LED state, led_state, finsh_type_uchar)
 
-// NOTES: When using FinSH with MSH (CONFIG_USING_MSH == 1, the default config)
-// - please append the following line to "shell_cmd.h" (without //)
-// ADD_MSH_CMD(led, Turn on/off builtin LED, led, rt_uint32_t, rt_uint32_t id, rt_uint8_t state)
-// Due to MSH doesn't support shell variables, "ADD_SHELL_VAR" has no effect
-//
-// After upload, send the following command through "Serial Monitor" and check the result.
-// led 0, 1, 2
-// led 1, 1
-// led 0, 1
+    After uploaded, please send the following command through "Serial Monitor"
+    and observe the output:
+    led(0, 1)
+    led(0, 0)
+    led(id, state)
+    state
+    state=0
+    led(id, state)
+ */
+
+/* NOTES
+    When using FinSH with MSH (default, CONFIG_USING_FINSH == 1 &&
+    CONFIG_USING_MSH == 1):
+    - please append the following line to "shell_cmd.h":
+      ADD_MSH_CMD(led, Turn on/off builtin LED, led, rt_uint32_t, rt_uint32_t id, rt_uint8_t state)
+    - due to MSH doesn't support shell variables, "ADD_SHELL_VAR" has no effect
+
+    After uploaded, please send the following command through "Serial Monitor"
+    and observe the output:
+    led 0, 1, 2
+    led 1, 1
+    led 0, 1
+ */
 
 extern "C" {
 

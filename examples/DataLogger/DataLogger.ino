@@ -1,4 +1,10 @@
+/***************************************************************************//**
+ * @file    DataLogger.ino
+ * @brief   Arduino RT-Thread library "DataLogger" example
+ * @author  onelife <onelife.real[at]gmail.com>
+ ******************************************************************************/
 #include <rtt.h>
+
 
 // RT-Thread function called by "RT_T.begin()"
 void rt_setup(void) {

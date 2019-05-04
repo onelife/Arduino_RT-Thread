@@ -1,6 +1,15 @@
+/***************************************************************************//**
+ * @file    Blink.ino
+ * @brief   Arduino RT-Thread library "Blink" example
+ * @author  onelife <onelife.real[at]gmail.com>
+ ******************************************************************************/
 #include <rtt.h>
 
-// NOTES: "CONFIG_USING_FINSH" and "CONFIG_USING_SPISD" in "rtconfig.h" may be turned off to save memory
+/* NOTES
+    The following flags in "rtconfig.h" may be turned off to save memory:
+    - CONFIG_USING_FINSH
+    - CONFIG_USING_SPISD
+ */
 
 struct rt_thread blink_thread;
 byte blink_thread_stack[1024];

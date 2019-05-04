@@ -1,6 +1,14 @@
+/***************************************************************************//**
+ * @file    RttMutex.ino
+ * @brief   Arduino RT-Thread library "RttMutex" example
+ * @author  onelife <onelife.real[at]gmail.com>
+ ******************************************************************************/
 #include <rtt.h>
 
-// NOTES: "CONFIG_USING_SPISD" in "rtconfig.h" may be turned off to save memory
+/* NOTES
+    The following flags in "rtconfig.h" may be turned off to save memory:
+    - CONFIG_USING_SPISD
+ */
 
 #define THREAD_NUM 3
 #define STACK_SIZE 256

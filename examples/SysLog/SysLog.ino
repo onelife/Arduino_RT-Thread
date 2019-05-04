@@ -1,18 +1,29 @@
+/***************************************************************************//**
+ * @file    SysLog.ino
+ * @brief   Arduino RT-Thread library "SysLog" example
+ * @author  onelife <onelife.real[at]gmail.com>
+ ******************************************************************************/
 #include <rtt.h>
+
+/* NOTES
+    The following flags in "rtconfig.h" may be turned off to save memory:
+    - CONFIG_USING_FINSH
+    - CONFIG_USING_SPISD
+ */
+
 #define LOG_LVL LOG_LVL_DBG
 #define LOG_TAG "EXAMPLE"
 #include <log.h>
 
-// NOTES: "LOG_LVL" and "LOG_TAG" must be defined before "#include <log.h>"
-// Available LOG_LVL:
-// - LOG_LVL_ASSERT
-// - LOG_LVL_ERROR
-// - LOG_LVL_WARNING
-// - LOG_LVL_INFO
-// - LOG_LVL_DBG
-
-// NOTES: "CONFIG_USING_FINSH" and "CONFIG_USING_SPISD" in "rtconfig.h" may be turned off to save memory
-
+/* NOTES
+    "LOG_LVL" and "LOG_TAG" must be defined before "#include <log.h>".
+    Available LOG_LVL:
+    - LOG_LVL_ASSERT
+    - LOG_LVL_ERROR
+    - LOG_LVL_WARNING
+    - LOG_LVL_INFO
+    - LOG_LVL_DBG
+ */
 
 // RT-Thread function called by "RT_T.begin()"
 void rt_setup(void) {
