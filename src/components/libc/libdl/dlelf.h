@@ -8,8 +8,8 @@
  * 2018/08/29     Bernard     first version
  */
 
-#ifndef DL_ELF_H__
-#define DL_ELF_H__
+#ifndef __DLELF_H__
+#define __DLELF_H__
 
 #include "dlmodule.h"
 
@@ -21,7 +21,12 @@ typedef rt_int32_t              Elf32_Sword;   /* Signed large integer */
 typedef rt_uint32_t             Elf32_Word;    /* Unsigned large integer */
 typedef rt_uint16_t             Elf32_Half;    /* Unsigned medium integer */
 
-/* e_ident[] magic number */
+/* e_ident */
+#define EI_CLASS                4              /* file class */
+#define EI_DATA                 5              /* data encoding */
+#define EI_NIDENT               16             /* Size of e_ident[] */
+
+/* e_ident: file identiﬁcation */
 #define ELFMAG0                 0x7f           /* e_ident[EI_MAG0] */
 #define ELFMAG1                 'E'            /* e_ident[EI_MAG1] */
 #define ELFMAG2                 'L'            /* e_ident[EI_MAG2] */
@@ -30,35 +35,31 @@ typedef rt_uint16_t             Elf32_Half;    /* Unsigned medium integer */
 #define ELFMAG                  "\177ELF"      /* magic */
 #define SELFMAG                 4              /* size of magic */
 
-#define EI_CLASS                4              /* file class */
-#define EI_DATA                 5              /* data encoding */
-#define EI_NIDENT               16             /* Size of e_ident[] */
-
-/* e_ident[] file class */
-#define ELFCLASSNONE            0              /* invalid */
-#define ELFCLASS32              1              /* 32-bit objs */
-#define ELFCLASS64              2              /* 64-bit objs */
-#define ELFCLASSNUM             3              /* number of classes */
-
-/* e_ident[] data encoding */
-#define ELFDATANONE             0              /* invalid */
-#define ELFDATA2LSB             1              /* Little-Endian */
-#define ELFDATA2MSB             2              /* Big-Endian */
-#define ELFDATANUM              3              /* number of data encode defines */
-
-/* e_ident */
 #define IS_ELF(ehdr)            ((ehdr).e_ident[EI_MAG0] == ELFMAG0 && \
                                  (ehdr).e_ident[EI_MAG1] == ELFMAG1 && \
                                  (ehdr).e_ident[EI_MAG2] == ELFMAG2 && \
                                  (ehdr).e_ident[EI_MAG3] == ELFMAG3)
 
+/* e_ident: file class */
+#define ELFCLASSNONE            0              /* invalid */
+#define ELFCLASS32              1              /* 32-bit objs */
+#define ELFCLASS64              2              /* 64-bit objs */
+#define ELFCLASSNUM             3              /* number of classes */
+
+/* e_ident: data encoding */
+#define ELFDATANONE             0              /* invalid */
+#define ELFDATA2LSB             1              /* Little-Endian */
+#define ELFDATA2MSB             2              /* Big-Endian */
+#define ELFDATANUM              3              /* number of data encode defines */
+
+/* e_type */
 #define ET_NONE                 0              /* No file type */
 #define ET_REL                  1              /* Relocatable file */
 #define ET_EXEC                 2              /* Executable file */
 #define ET_DYN                  3              /* Shared object file */
 #define ET_CORE                 4              /* Core file */
 
-/* ELF Header */
+/* elf Header */
 typedef struct elfhdr {
     unsigned char e_ident[EI_NIDENT];          /* ELF Identification */
     Elf32_Half    e_type;                      /* object file type */
@@ -77,22 +78,8 @@ typedef struct elfhdr {
                                                   header string table" entry offset */
 } Elf32_Ehdr;
 
-/* Section Header */
-typedef struct {
-    Elf32_Word sh_name;                        /* name - index into section header
-                                                  string table section */
-    Elf32_Word sh_type;                        /* type */
-    Elf32_Word sh_flags;                       /* flags */
-    Elf32_Addr sh_addr;                        /* address */
-    Elf32_Off  sh_offset;                      /* file offset */
-    Elf32_Word sh_size;                        /* section size */
-    Elf32_Word sh_link;                        /* section header table index link */
-    Elf32_Word sh_info;                        /* extra information */
-    Elf32_Word sh_addralign;                   /* address alignment */
-    Elf32_Word sh_entsize;                     /* section entry size */
-} Elf32_Shdr;
 
-/* Section names */
+/* sh_name */
 #define ELF_BSS                 ".bss"         /* uninitialized data */
 #define ELF_DATA                ".data"        /* initialized data */
 #define ELF_DEBUG               ".debug"       /* debug */
@@ -116,24 +103,52 @@ typedef struct {
 #define ELF_TEXT                ".text"        /* code */
 #define ELF_RTMSYMTAB           "RTMSymTab"
 
-/* Symbol Table Entry */
-typedef struct elf32_sym {
-    Elf32_Word    st_name;                     /* name - index into string table */
-    Elf32_Addr    st_value;                    /* symbol value */
-    Elf32_Word    st_size;                     /* symbol size */
-    unsigned char st_info;                     /* type and binding */
-    unsigned char st_other;                    /* 0 - no defined meaning */
-    Elf32_Half    st_shndx;                    /* section header index */
-} Elf32_Sym;
+/* sh_type */
+#define SHT_NULL                0              /* inactive */
+#define SHT_PROGBITS            1              /* program defined information */
+#define SHT_SYMTAB              2              /* symbol table section */
+#define SHT_STRTAB              3              /* string table section */
+#define SHT_RELA                4              /* relocation section with addends */
+#define SHT_HASH                5              /* symbol hash table section */
+#define SHT_DYNAMIC             6              /* dynamic section */
+#define SHT_NOTE                7              /* note section */
+#define SHT_NOBITS              8              /* no space section */
+#define SHT_REL                 9              /* relocation section without addends */
+#define SHT_SHLIB               10             /* reserved - purpose unknown */
+#define SHT_DYNSYM              11             /* dynamic symbol table section */
+#define SHT_NUM                 12             /* number of section types */
+#define SHT_LOPROC              0x70000000     /* reserved range for processor */
+#define SHT_HIPROC              0x7fffffff     /* specific section header types */
+#define SHT_LOUSER              0x80000000     /* reserved range for application */
+#define SHT_HIUSER              0xffffffff     /* specific indexes */
 
-#define STB_LOCAL               0              /* BIND */
+/* sh_flags */
+#define SHF_WRITE               0x1            /* Writable */
+#define SHF_ALLOC               0x2            /* occupies memory */
+#define SHF_EXECINSTR           0x4            /* executable */
+#define SHF_MASKPROC            0xf0000000     /* reserved bits for processor
+                                                  specific section attributes */
+
+#define IS_PROG(sh)             (sh->sh_type == SHT_PROGBITS)
+#define IS_NOPROG(sh)           (sh->sh_type == SHT_NOBITS)
+#define IS_REL(sh)              (sh->sh_type == SHT_REL)
+#define IS_RELA(sh)             (sh->sh_type == SHT_RELA)
+#define IS_DYNSYM(sh)           (sh->sh_type == SHT_DYNSYM)
+#define IS_ALLOC(sh)            (sh->sh_flags == SHF_ALLOC)
+#define IS_AX(sh)               ((sh->sh_flags & SHF_ALLOC) && \
+                                 (sh->sh_flags & SHF_EXECINSTR))
+#define IS_AW(sh)               ((sh->sh_flags & SHF_ALLOC) && \
+                                 (sh->sh_flags & SHF_WRITE))
+
+/* st_info: bind */
+#define STB_LOCAL               0
 #define STB_GLOBAL              1
 #define STB_WEAK                2
 #define STB_NUM                 3
-
 #define STB_LOPROC              13             /* processor specific range */
 #define STB_HIPROC              15
 
+/* st_info: type */
 #define STT_NOTYPE              0              /* symbol type is unspecified */
 #define STT_OBJECT              1              /* data object */
 #define STT_FUNC                2              /* code object */
@@ -151,30 +166,40 @@ typedef struct elf32_sym {
 #define ELF_ST_TYPE(info)       ((info) & 0xf)
 #define ELF_ST_INFO(bind, type) (((bind)<<4)+((type)&0xf))
 
-/* Relocation entry with implicit addend */
+/* section Header */
 typedef struct {
-    Elf32_Addr r_offset;                       /* offset of relocation */
-    Elf32_Word r_info;                         /* symbol table index and type */
-} Elf32_Rel;
+    Elf32_Word sh_name;                        /* name - index into section header
+                                                  string table section */
+    Elf32_Word sh_type;                        /* type */
+    Elf32_Word sh_flags;                       /* flags */
+    Elf32_Addr sh_addr;                        /* address */
+    Elf32_Off  sh_offset;                      /* file offset */
+    Elf32_Word sh_size;                        /* section size */
+    Elf32_Word sh_link;                        /* section header table index link */
+    Elf32_Word sh_info;                        /* extra information */
+    Elf32_Word sh_addralign;                   /* address alignment */
+    Elf32_Word sh_entsize;                     /* section entry size */
+} Elf32_Shdr;
 
-/* Relocation entry with explicit addend */
-typedef struct {
-    Elf32_Addr  r_offset;                      /* offset of relocation */
-    Elf32_Word  r_info;                        /* symbol table index and type */
-    Elf32_Sword r_addend;
-} Elf32_Rela;
 
-/* Extract relocation info - r_info */
-#define ELF32_R_SYM(i)          ((i) >> 8)
-#define ELF32_R_TYPE(i)         ((unsigned char) (i))
-#define ELF32_R_INFO(s,t)       (((s) << 8) + (unsigned char)(t))
+/* st_shndx */
+#define SHN_UNDEF               0              /* undefined */
 
-/* ELF32_R_SYM */
+/* symbol table entry */
+typedef struct elf32_sym {
+    Elf32_Word    st_name;                     /* name - index into string table */
+    Elf32_Addr    st_value;                    /* symbol value */
+    Elf32_Word    st_size;                     /* symbol size */
+    unsigned char st_info;                     /* type and binding */
+    unsigned char st_other;                    /* 0 - no defined meaning */
+    Elf32_Half    st_shndx;                    /* section header index */
+} Elf32_Sym;
+
+
+/* r_info: sym */
 #define STN_UNDEF               0
 
-/*
- * Relocation type for arm
- */
+/* r_info: type for ARM */
 #define R_ARM_NONE              0
 #define R_ARM_PC24              1
 #define R_ARM_ABS32             2
@@ -190,9 +215,7 @@ typedef struct {
 #define R_ARM_THM_JUMP24        30
 #define R_ARM_V4BX              40
 
-/*
- * Relocation type for x86
- */
+/* r_info: type for x86 */
 #define R_386_NONE              0
 #define R_386_32                1
 #define R_386_PC32              2
@@ -205,7 +228,45 @@ typedef struct {
 #define R_386_GOTOFF            9
 #define R_386_GOTPC             10
 
-/* Program Header */
+#define ELF32_R_SYM(i)          ((i) >> 8)
+#define ELF32_R_TYPE(i)         ((unsigned char) (i))
+#define ELF32_R_INFO(s,t)       (((s) << 8) + (unsigned char)(t))
+
+/* relocation table entry with implicit addend */
+typedef struct {
+    Elf32_Addr r_offset;                       /* offset of relocation */
+    Elf32_Word r_info;                         /* symbol table index and type */
+} Elf32_Rel;
+
+/* relocation table entry with explicit addend */
+typedef struct {
+    Elf32_Addr  r_offset;                      /* offset of relocation */
+    Elf32_Word  r_info;                        /* symbol table index and type */
+    Elf32_Sword r_addend;
+} Elf32_Rela;
+
+
+/* p_type */
+#define PT_NULL                 0
+#define PT_LOAD                 1
+#define PT_DYNAMIC              2
+#define PT_INTERP               3
+#define PT_NOTE                 4
+#define PT_SHLIB                5
+#define PT_PHDR                 6
+#define PT_TLS                  7
+#define PT_NUM                  8
+#define PT_LOOS                 0x60000000
+#define PT_HIOS                 0x6fffffff
+#define PT_LOPROC               0x70000000
+#define PT_HIPROC               0x7fffffff
+
+/* p_flags */
+#define PF_X                    1
+#define PF_W                    2
+#define PF_R                    4
+
+/* program Header */
 typedef struct {
     Elf32_Word p_type;                         /* segment type */
     Elf32_Off  p_offset;                       /* segment offset */
@@ -216,6 +277,7 @@ typedef struct {
     Elf32_Word p_flags;                        /* flags */
     Elf32_Word p_align;                        /* memory alignment */
 } Elf32_Phdr;
+
 
 /* d_tag */
 #define DT_NULL                 0
@@ -266,6 +328,7 @@ typedef struct {
 #define DT_LOPROC               0x70000000
 #define DT_HIPROC               0x7fffffff
 
+/* dynamic structure*/
 typedef struct {
     Elf32_Sword d_tag;
     union {
@@ -273,66 +336,6 @@ typedef struct {
         Elf32_Addr d_ptr;
     } d_un;
 } Elf32_Dyn;
-
-/* p_type */
-#define PT_NULL                 0
-#define PT_LOAD                 1
-#define PT_DYNAMIC              2
-#define PT_INTERP               3
-#define PT_NOTE                 4
-#define PT_SHLIB                5
-#define PT_PHDR                 6
-#define PT_TLS                  7
-#define PT_NUM                  8
-#define PT_LOOS                 0x60000000
-#define PT_HIOS                 0x6fffffff
-#define PT_LOPROC               0x70000000
-#define PT_HIPROC               0x7fffffff
-
-/* p_flags */
-#define PF_X                    1
-#define PF_W                    2
-#define PF_R                    4
-
-/* sh_type */
-#define SHT_NULL                0              /* inactive */
-#define SHT_PROGBITS            1              /* program defined information */
-#define SHT_SYMTAB              2              /* symbol table section */
-#define SHT_STRTAB              3              /* string table section */
-#define SHT_RELA                4              /* relocation section with addends */
-#define SHT_HASH                5              /* symbol hash table section */
-#define SHT_DYNAMIC             6              /* dynamic section */
-#define SHT_NOTE                7              /* note section */
-#define SHT_NOBITS              8              /* no space section */
-#define SHT_REL                 9              /* relocation section without addends */
-#define SHT_SHLIB               10             /* reserved - purpose unknown */
-#define SHT_DYNSYM              11             /* dynamic symbol table section */
-#define SHT_NUM                 12             /* number of section types */
-#define SHT_LOPROC              0x70000000     /* reserved range for processor */
-#define SHT_HIPROC              0x7fffffff     /* specific section header types */
-#define SHT_LOUSER              0x80000000     /* reserved range for application */
-#define SHT_HIUSER              0xffffffff     /* specific indexes */
-
-/* st_shndx */
-#define SHN_UNDEF               0              /* undefined */
-
-/* Section Attribute Flags - sh_flags */
-#define SHF_WRITE               0x1            /* Writable */
-#define SHF_ALLOC               0x2            /* occupies memory */
-#define SHF_EXECINSTR           0x4            /* executable */
-#define SHF_MASKPROC            0xf0000000     /* reserved bits for processor */
-/* specific section attributes */
-
-#define IS_PROG(sh)             (sh->sh_type == SHT_PROGBITS)
-#define IS_NOPROG(sh)           (sh->sh_type == SHT_NOBITS)
-#define IS_REL(sh)              (sh->sh_type == SHT_REL)
-#define IS_RELA(sh)             (sh->sh_type == SHT_RELA)
-#define IS_DYNSYM(sh)             (sh->sh_type == SHT_DYNSYM)
-#define IS_ALLOC(sh)            (sh->sh_flags == SHF_ALLOC)
-#define IS_AX(sh)               ((sh->sh_flags & SHF_ALLOC) && \
-                                 (sh->sh_flags & SHF_EXECINSTR))
-#define IS_AW(sh)               ((sh->sh_flags & SHF_ALLOC) && \
-                                 (sh->sh_flags & SHF_WRITE))
 
 
 rt_err_t dlmodule_load_shared_object(int fd, Elf32_Ehdr *elf_hdr,
@@ -344,4 +347,4 @@ rt_err_t dlmodule_load_relocated_object(int fd, Elf32_Ehdr *elf_hdr,
 Elf32_Addr dlmodule_relocate(rt_uint8_t rel_type, Elf32_Addr *where,
     Elf32_Addr sym_val);
 
-#endif
+#endif /* __DLELF_H__ */

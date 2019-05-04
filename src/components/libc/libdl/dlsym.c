@@ -14,19 +14,18 @@
 
 #include "dlmodule.h"
 
-void* dlsym(void *handle, const char* symbol)
-{
+
+void *dlsym(void *handle, const char* symbol) {
+    rt_dlmodule_t *module;
     int i;
-    struct rt_dlmodule *module;
-    
+
     RT_ASSERT(handle != RT_NULL);
+    module = (rt_dlmodule_t *)handle;
 
-    module = (struct rt_dlmodule *)handle;
-
-    for(i=0; i<module->nsym; i++)
-    {
-        if (rt_strcmp(module->symtab[i].name, symbol) == 0)
+    for (i = 0; i < module->nsym; i++) {
+        if (!rt_strcmp(module->symtab[i].name, symbol)) {
             return (void*)module->symtab[i].addr;
+        }
     }
 
     return RT_NULL;

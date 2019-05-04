@@ -101,7 +101,7 @@ static struct rt_object_information rt_object_container[RT_Object_Info_Unknown] 
     {RT_Object_Class_Timer, _OBJ_CONTAINER_LIST_INIT(RT_Object_Info_Timer), sizeof(struct rt_timer)},
 #ifdef RT_USING_MODULE
     /* initialize object container - module */
-    {RT_Object_Class_Module, _OBJ_CONTAINER_LIST_INIT(RT_Object_Info_Module), sizeof(struct rt_dlmodule)},
+    {RT_Object_Class_Module, _OBJ_CONTAINER_LIST_INIT(RT_Object_Info_Module), sizeof(rt_dlmodule_t)},
 #endif
 };
 
@@ -242,7 +242,7 @@ void rt_object_init(struct rt_object         *object,
     register rt_base_t temp;
     struct rt_object_information *information;
 #ifdef RT_USING_MODULE
-    struct rt_dlmodule *module = dlmodule_self();
+    rt_dlmodule_t *module = dlmodule_self();
 #endif
 
     /* get object information */
@@ -322,7 +322,7 @@ rt_object_t rt_object_allocate(enum rt_object_class_type type, const char *name)
     register rt_base_t temp;
     struct rt_object_information *information;
 #ifdef RT_USING_MODULE
-    struct rt_dlmodule *module = dlmodule_self();
+    rt_dlmodule_t *module = dlmodule_self();
 #endif
 
     RT_DEBUG_NOT_IN_INTERRUPT;

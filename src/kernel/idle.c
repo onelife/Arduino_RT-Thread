@@ -155,7 +155,7 @@ void rt_thread_idle_excute(void)
         rt_base_t lock;
         rt_thread_t thread;
 #ifdef RT_USING_MODULE
-        struct rt_dlmodule *module = RT_NULL;
+        rt_dlmodule_t *module = RT_NULL;
 #endif
         RT_DEBUG_NOT_IN_INTERRUPT;
 
@@ -170,7 +170,7 @@ void rt_thread_idle_excute(void)
                                    struct rt_thread,
                                    tlist);
 #ifdef RT_USING_MODULE
-            module = (struct rt_dlmodule*)thread->module_id;
+            module = (rt_dlmodule_t *)thread->module_id;
             if (module)
             {
                 dlmodule_destroy(module);

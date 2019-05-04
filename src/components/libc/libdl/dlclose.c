@@ -14,24 +14,18 @@
 
 #include "dlmodule.h"
 
-int dlclose(void *handle)
-{
-    struct rt_dlmodule *module;
+
+int dlclose(void *handle) {
+    rt_dlmodule_t *module = (rt_dlmodule_t *)handle;
 
     RT_ASSERT(handle != RT_NULL);
 
-    module = (struct rt_dlmodule *)handle;
-
     rt_enter_critical();
     module->nref--;
-    if (module->nref <= 0)
-    {
+    if (module->nref <= 0) {
         rt_exit_critical();
-
         dlmodule_destroy(module);
-    }
-    else
-    {
+    } else {
         rt_exit_critical();
     }
 

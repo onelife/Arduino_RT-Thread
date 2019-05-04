@@ -6,6 +6,7 @@
  * Change Logs:
  * Date           Author      Notes
  * 2018/08/29     Bernard     first version
+ * 2019/04/25     onelife     refactor, reduce ram usage, bug fix
  */
 
 #include "include/rtthread.h"
@@ -13,437 +14,616 @@
 #ifdef RT_USING_MODULE
 
 #include "dlelf.h"
+#include "components/dfs/include/dfs_posix.h"
 
-#define DBG_SECTION_NAME    "DLMD"
-#define DBG_ENABLE          // enable debug macro
-#define DBG_LEVEL           DBG_INFO
-#define DBG_COLOR
-#include <rtdbg.h>          // must after of DEBUG_ENABLE or some other options
+#ifdef RT_USING_ULOG
+# define LOG_LVL                    LOG_LVL_INFO
+# define LOG_TAG                    "MO_ELF"
+# include "components/utilities/ulog/ulog.h"
+#else /* RT_USING_ULOG */
+# define LOG_E(format, args...)     rt_kprintf(format "\n", ##args)
+# define LOG_W                      LOG_E
+# define LOG_I                      LOG_E
+# define LOG_D                      LOG_E
+#endif /* RT_USING_ULOG */
 
-rt_err_t dlmodule_load_shared_object(struct rt_dlmodule* module, void *module_ptr)
-{
-    rt_bool_t linked   = RT_FALSE;
-    rt_uint32_t index, module_size = 0;
-    Elf32_Addr vstart_addr, vend_addr;
-    rt_bool_t has_vstart;
+#define MAX_PADDING_SIZE            (16)
 
-    RT_ASSERT(module_ptr != RT_NULL);
-
-    if (rt_memcmp(elf_module->e_ident, RTMMAG, SELFMAG) == 0)
-    {
-        /* rtmlinker finished */
-        linked = RT_TRUE;
-    }
-
-    /* get the ELF image size */
-    has_vstart = RT_FALSE;
-    vstart_addr = vend_addr = RT_NULL;
-    for (index = 0; index < elf_module->e_phnum; index++)
-    {
-        if (phdr[index].p_type != PT_LOAD)
-            continue;
-
-        LOG_D("LOAD segment: %d, 0x%p, 0x%08x", index, phdr[index].p_vaddr, phdr[index].p_memsz);
-
-        if (phdr[index].p_memsz < phdr[index].p_filesz)
-        {
-            rt_kprintf("invalid elf: segment %d: p_memsz: %d, p_filesz: %d\n",
-                       index, phdr[index].p_memsz, phdr[index].p_filesz);
-            return RT_NULL;
-        }
-        if (!has_vstart)
-        {
-            vstart_addr = phdr[index].p_vaddr;
-            vend_addr = phdr[index].p_vaddr + phdr[index].p_memsz;
-            has_vstart = RT_TRUE;
-            if (vend_addr < vstart_addr)
-            {
-                rt_kprintf("invalid elf: segment %d: p_vaddr: %d, p_memsz: %d\n",
-                           index, phdr[index].p_vaddr, phdr[index].p_memsz);
-                return RT_NULL;
-            }
-        }
-        else
-        {
-            if (phdr[index].p_vaddr < vend_addr)
-            {
-                rt_kprintf("invalid elf: segment should be sorted and not overlapped\n");
-                return RT_NULL;
-            }
-            if (phdr[index].p_vaddr > vend_addr + 16)
-            {
-                /* There should not be too much padding in the object files. */
-                LOG_W("warning: too much padding before segment %d", index);
-            }
-
-            vend_addr = phdr[index].p_vaddr + phdr[index].p_memsz;
-            if (vend_addr < phdr[index].p_vaddr)
-            {
-                rt_kprintf("invalid elf: "
-                           "segment %d address overflow\n", index);
-                return RT_NULL;
-            }
-        }
-    }
-
-    module_size = vend_addr - vstart_addr;
-    LOG_D("module size: %d, vstart_addr: 0x%p", module_size, vstart_addr);
-    if (module_size == 0)
-    {
-        rt_kprintf("Module: size error\n");
-        return -RT_ERROR;
-    }
-
-    module->vstart_addr = vstart_addr;
-    module->nref = 0;
-
-    /* allocate module space */
-    module->mem_space = rt_malloc(module_size);
-    if (module->mem_space == RT_NULL)
-    {
-        rt_kprintf("Module: allocate space failed.\n");
-        return -RT_ERROR;
-    }
-    module->mem_size = module_size;
-
-    /* zero all space */
-    rt_memset(module->mem_space, 0, module_size);
-    for (index = 0; index < elf_module->e_phnum; index++)
-    {
-        if (phdr[index].p_type == PT_LOAD)
-        {
-            rt_memcpy(module->mem_space + phdr[index].p_vaddr - vstart_addr,
-                      (rt_uint8_t *)elf_module + phdr[index].p_offset,
-                      phdr[index].p_filesz);
-        }
-    }
-
-    /* set module entry */
-    module->entry_addr = module->mem_space + elf_module->e_entry - vstart_addr;
-
-    /* handle relocation section */
-    for (index = 0; index < elf_module->e_shnum; index ++)
-    {
-        rt_uint32_t i, nr_reloc;
-        Elf32_Sym *symtab;
-        Elf32_Rel *rel;
-        rt_uint8_t *strtab;
-        static rt_bool_t unsolved = RT_FALSE;
-
-        if (!IS_REL(shdr[index]))
-            continue;
-
-        /* get relocate item */
-        rel = (Elf32_Rel *)((rt_uint8_t *)module_ptr + shdr[index].sh_offset);
-
-        /* locate .rel.plt and .rel.dyn section */
-        symtab = (Elf32_Sym *)((rt_uint8_t *)module_ptr +
-                               shdr[shdr[index].sh_link].sh_offset);
-        strtab = (rt_uint8_t *)module_ptr +
-                 shdr[shdr[shdr[index].sh_link].sh_link].sh_offset;
-        nr_reloc = (rt_uint32_t)(shdr[index].sh_size / sizeof(Elf32_Rel));
-
-        /* relocate every items */
-        for (i = 0; i < nr_reloc; i ++)
-        {
-            Elf32_Sym *sym = &symtab[ELF32_R_SYM(rel->r_info)];
-
-            LOG_D("relocate symbol %s shndx %d", strtab + sym->st_name, sym->st_shndx);
-
-            if ((sym->st_shndx != SHT_NULL) ||(ELF_ST_BIND(sym->st_info) == STB_LOCAL))
-            {
-                Elf32_Addr addr;
-
-                addr = (Elf32_Addr)(module->mem_space + sym->st_value - vstart_addr);
-                dlmodule_relocate(module, rel, addr);
-            }
-            else if (!linked)
-            {
-                Elf32_Addr addr;
-
-                LOG_D("relocate symbol: %s", strtab + sym->st_name);
-                /* need to resolve symbol in kernel symbol table */
-                addr = dlmodule_symbol_find((const char *)(strtab + sym->st_name));
-                if (addr == 0)
-                {
-                    LOG_E("Module: can't find %s in kernel symbol table", strtab + sym->st_name);
-                    unsolved = RT_TRUE;
-                }
-                else
-                {
-                    dlmodule_relocate(module, rel, addr);
-                }
-            }
-            rel ++;
-        }
-
-        if (unsolved) 
-            return -RT_ERROR;
-    }
-
-    /* construct module symbol table */
-    for (index = 0; index < elf_module->e_shnum; index ++)
-    {
-        /* find .dynsym section */
-        rt_uint8_t *shstrab;
-        shstrab = (rt_uint8_t *)module_ptr +
-                  shdr[elf_module->e_shstrndx].sh_offset;
-        if (rt_strcmp((const char *)(shstrab + shdr[index].sh_name), ELF_DYNSYM) == 0)
-            break;
-    }
-
-    /* found .dynsym section */
-    if (index != elf_module->e_shnum)
-    {
-        int i, count = 0;
-        Elf32_Sym  *symtab = RT_NULL;
-        rt_uint8_t *strtab = RT_NULL;
-
-        symtab = (Elf32_Sym *)((rt_uint8_t *)module_ptr + shdr[index].sh_offset);
-        strtab = (rt_uint8_t *)module_ptr + shdr[shdr[index].sh_link].sh_offset;
-
-        for (i = 0; i < shdr[index].sh_size / sizeof(Elf32_Sym); i++)
-        {
-            if ((ELF_ST_BIND(symtab[i].st_info) == STB_GLOBAL) &&
-                (ELF_ST_TYPE(symtab[i].st_info) == STT_FUNC))
-                count ++;
-        }
-
-        module->symtab = (struct rt_module_symtab *)rt_malloc
-                         (count * sizeof(struct rt_module_symtab));
-        module->nsym = count;
-        for (i = 0, count = 0; i < shdr[index].sh_size / sizeof(Elf32_Sym); i++)
-        {
-            rt_size_t length;
-
-            if ((ELF_ST_BIND(symtab[i].st_info) != STB_GLOBAL) ||
-                (ELF_ST_TYPE(symtab[i].st_info) != STT_FUNC))
-                continue;
-
-            length = rt_strlen((const char *)(strtab + symtab[i].st_name)) + 1;
-
-            module->symtab[count].addr =
-                (void *)(module->mem_space + symtab[i].st_value - module->vstart_addr);
-            module->symtab[count].name = rt_malloc(length);
-            rt_memset((void *)module->symtab[count].name, 0, length);
-            rt_memcpy((void *)module->symtab[count].name,
-                      strtab + symtab[i].st_name,
-                      length);
-            count ++;
-        }
-    }
-
-    return RT_EOK;
+#define BREAK_WITH_WARN(err, msg, args...) {\
+    LOG_W(msg, ##args); \
+    ret = -err; \
+    break; \
 }
 
-rt_err_t dlmodule_load_relocated_object(struct rt_dlmodule* module, void *module_ptr)
-{
-    rt_uint32_t index, rodata_addr = 0, bss_addr = 0, data_addr = 0;
-    rt_uint32_t module_addr = 0, module_size = 0;
-    rt_uint8_t *ptr, *strtab, *shstrab;
+#define READ_PROG_HDR(fd, elf_hdr, idx, buf) { \
+    lseek(fd, elf_hdr->e_phoff + sizeof(Elf32_Phdr) * idx, SEEK_SET); \
+    if (sizeof(Elf32_Phdr) != (rt_uint32_t)read(fd, buf, sizeof(Elf32_Phdr))) \
+        BREAK_WITH_WARN(RT_EIO, "read prog_hdr err"); \
+}
 
-    /* get the ELF image size */
-    for (index = 0; index < elf_module->e_shnum; index ++)
-    {
-        /* text */
-        if (IS_PROG(shdr[index]) && IS_AX(shdr[index]))
-        {
-            module_size += shdr[index].sh_size;
-            module_addr = shdr[index].sh_addr;
-        }
-        /* rodata */
-        if (IS_PROG(shdr[index]) && IS_ALLOC(shdr[index]))
-        {
-            module_size += shdr[index].sh_size;
-        }
-        /* data */
-        if (IS_PROG(shdr[index]) && IS_AW(shdr[index]))
-        {
-            module_size += shdr[index].sh_size;
-        }
-        /* bss */
-        if (IS_NOPROG(shdr[index]) && IS_AW(shdr[index]))
-        {
-            module_size += shdr[index].sh_size;
-        }
-    }
+#define READ_SECT_HDR(fd, elf_hdr, idx, buf) { \
+    lseek(fd, elf_hdr->e_shoff + sizeof(Elf32_Shdr) * idx, SEEK_SET); \
+    if (sizeof(Elf32_Shdr) != (rt_uint32_t)read(fd, buf, sizeof(Elf32_Shdr))) \
+        BREAK_WITH_WARN(RT_EIO, "read sect_hdr err"); \
+}
 
-    /* no text, data and bss on image */
-    if (module_size == 0) return RT_NULL;
+#define LOAD_SECT(fd, sect_hdr, buf) { \
+    lseek(fd, sect_hdr->sh_offset, SEEK_SET); \
+    if (sect_hdr->sh_size != (rt_uint32_t)read(fd, buf, sect_hdr->sh_size)) \
+        BREAK_WITH_WARN(RT_EIO, "sect read err"); \
+}
 
-    module->vstart_addr = 0;
+#define LOAD_PROG(fd, prog_hdr, buf) { \
+    lseek(fd, prog_hdr->p_offset, SEEK_SET); \
+    if (prog_hdr->p_filesz != (rt_uint32_t)read(fd, buf, prog_hdr->p_filesz)) \
+        BREAK_WITH_WARN(RT_EIO, "prog read err"); \
+}
 
-    /* allocate module space */
-    module->mem_space = rt_malloc(module_size);
-    if (module->mem_space == RT_NULL)
-    {
-        rt_kprintf("Module: allocate space failed.\n");
-        return -RT_ERROR;
-    }
-    module->mem_size = module_size;
+#define LOAD_CONTENT(fd, ofs, buf, sz) { \
+    lseek(fd, ofs, SEEK_SET); \
+    if (sz != (rt_uint32_t)read(fd, buf, sz)) \
+        BREAK_WITH_WARN(RT_EIO, "content read err"); \
+}
 
-    /* zero all space */
-    ptr = module->mem_space;
-    rt_memset(ptr, 0, module_size);
 
-    /* load text and data section */
-    for (index = 0; index < elf_module->e_shnum; index ++)
-    {
-        /* load text section */
-        if (IS_PROG(shdr[index]) && IS_AX(shdr[index]))
-        {
-            rt_memcpy(ptr,
-                      (rt_uint8_t *)elf_module + shdr[index].sh_offset,
-                      shdr[index].sh_size);
-            LOG_D("load text 0x%x, size %d", ptr, shdr[index].sh_size);
-            ptr += shdr[index].sh_size;
-        }
+rt_err_t dlmodule_load_reltab(rt_dlmodule_t *module, Elf32_Rel *reltab,
+    rt_uint32_t rel_cnt, Elf32_Sym *symtab, rt_uint8_t *strtab) {
+    rt_err_t ret;
+    rt_uint32_t idx;
 
-        /* load rodata section */
-        if (IS_PROG(shdr[index]) && IS_ALLOC(shdr[index]))
-        {
-            rt_memcpy(ptr,
-                      (rt_uint8_t *)elf_module + shdr[index].sh_offset,
-                      shdr[index].sh_size);
-            rodata_addr = (rt_uint32_t)ptr;
-            LOG_D("load rodata 0x%x, size %d, rodata 0x%x", ptr, 
-                shdr[index].sh_size, *(rt_uint32_t *)data_addr);
-            ptr += shdr[index].sh_size;
-        }
+    ret = RT_EOK;
+    for (idx = 0; idx < rel_cnt; idx++) {
+        Elf32_Addr *where;
+        Elf32_Addr sym_val = 0;
+        Elf32_Sym *sym = RT_NULL;
+        rt_uint8_t rel_type = ELF32_R_TYPE(reltab[idx].r_info);
+        rt_uint32_t sym_idx = ELF32_R_SYM(reltab[idx].r_info);
 
-        /* load data section */
-        if (IS_PROG(shdr[index]) && IS_AW(shdr[index]))
-        {
-            rt_memcpy(ptr,
-                      (rt_uint8_t *)elf_module + shdr[index].sh_offset,
-                      shdr[index].sh_size);
-            data_addr = (rt_uint32_t)ptr;
-            LOG_D("load data 0x%x, size %d, data 0x%x", ptr, 
-                shdr[index].sh_size, *(rt_uint32_t *)data_addr);
-            ptr += shdr[index].sh_size;
-        }
-
-        /* load bss section */
-        if (IS_NOPROG(shdr[index]) && IS_AW(shdr[index]))
-        {
-            rt_memset(ptr, 0, shdr[index].sh_size);
-            bss_addr = (rt_uint32_t)ptr;
-            LOG_D("load bss 0x%x, size %d", ptr, shdr[index].sh_size);
-        }
-    }
-
-    /* set module entry */
-    module->entry_addr = (rt_dlmodule_entry_func_t)((rt_uint8_t *)module->mem_space + elf_module->e_entry - module_addr);
-
-    /* handle relocation section */
-    for (index = 0; index < elf_module->e_shnum; index ++)
-    {
-        rt_uint32_t i, nr_reloc;
-        Elf32_Sym *symtab;
-        Elf32_Rel *rel;
-
-        if (!IS_REL(shdr[index]))
-            continue;
-
-        /* get relocate item */
-        rel = (Elf32_Rel *)((rt_uint8_t *)module_ptr + shdr[index].sh_offset);
-
-        /* locate .dynsym and .dynstr */
-        symtab   = (Elf32_Sym *)((rt_uint8_t *)module_ptr +
-                                 shdr[shdr[index].sh_link].sh_offset);
-        strtab   = (rt_uint8_t *)module_ptr +
-                   shdr[shdr[shdr[index].sh_link].sh_link].sh_offset;
-        shstrab  = (rt_uint8_t *)module_ptr +
-                   shdr[elf_module->e_shstrndx].sh_offset;
-        nr_reloc = (rt_uint32_t)(shdr[index].sh_size / sizeof(Elf32_Rel));
-
-        /* relocate every items */
-        for (i = 0; i < nr_reloc; i ++)
-        {
-            Elf32_Sym *sym = &symtab[ELF32_R_SYM(rel->r_info)];
-
-            LOG_D("relocate symbol: %s", strtab + sym->st_name);
-
-            if (sym->st_shndx != STN_UNDEF)
-            {
-                Elf32_Addr addr = 0;
-                
-                if ((ELF_ST_TYPE(sym->st_info) == STT_SECTION) ||
-                    (ELF_ST_TYPE(sym->st_info) == STT_OBJECT))
-                {
-                    if (rt_strncmp((const char *)(shstrab +
-                                                  shdr[sym->st_shndx].sh_name), ELF_RODATA, 8) == 0)
-                    {
-                        /* relocate rodata section */
-                        LOG_D("rodata");
-                        addr = (Elf32_Addr)(rodata_addr + sym->st_value);
-                    }
-                    else if (rt_strncmp((const char *)
-                                        (shstrab + shdr[sym->st_shndx].sh_name), ELF_BSS, 5) == 0)
-                    {
-                        /* relocate bss section */
-                        LOG_D("bss");
-                        addr = (Elf32_Addr)bss_addr + sym->st_value;
-                    }
-                    else if (rt_strncmp((const char *)(shstrab + shdr[sym->st_shndx].sh_name),
-                                        ELF_DATA, 6) == 0)
-                    {
-                        /* relocate data section */
-                        LOG_D("data");
-                        addr = (Elf32_Addr)data_addr + sym->st_value;
-                    }
-
-                    if (addr != 0) dlmodule_relocate(module, rel, addr);
-                }
-                else if (ELF_ST_TYPE(sym->st_info) == STT_FUNC)
-                {
-                    addr = (Elf32_Addr)((rt_uint8_t *) module->mem_space - module_addr + sym->st_value);
-
-                    /* relocate function */
-                    dlmodule_relocate(module, rel, addr);
+        LOG_D("rel %02d: type %d sym_idx %d", idx, rel_type, sym_idx);
+        if (STN_UNDEF == sym_idx) {
+            sym_val = 0;
+        } else {
+            sym = &symtab[sym_idx];
+            LOG_D("sym %s, shndx %d", strtab + sym->st_name, sym->st_shndx);
+            LOG_D("bind %d type %d value %p", ELF_ST_BIND(sym->st_info),
+                ELF_ST_TYPE(sym->st_info), sym->st_value);
+            if (SHN_UNDEF != sym->st_shndx) {
+                sym_val = (Elf32_Addr)(module->mem_space + \
+                    (sym->st_value - module->vstart_addr));
+            } else {
+                // if (linked) continue;
+                /* symbol table lookup */
+                sym_val = dlmodule_symbol_find((const char *)\
+                    (strtab + sym->st_name));
+                if (!sym_val) {
+                    BREAK_WITH_WARN(RT_ERROR, "unsolved sym %s",
+                        strtab + sym->st_name);
                 }
             }
-            else if (ELF_ST_TYPE(sym->st_info) == STT_FUNC)
-            {
-                /* relocate function */
-                dlmodule_relocate(module, rel,
-                                       (Elf32_Addr)((rt_uint8_t *)
-                                                    module->mem_space
-                                                    - module_addr
-                                                    + sym->st_value));
+        }
+        /* do relocate */
+        where = module->mem_space + \
+            (reltab[idx].r_offset - module->vstart_addr);
+        LOG_D("sym %s: @%p bf %p", strtab + sym->st_name, where,
+            sym_val);
+        *where = dlmodule_relocate(rel_type, where, sym_val);
+        LOG_D("sym %s: @%p af %p", strtab + sym->st_name, where,
+            *where);
+    } /* for (idx = 0; idx < rel_cnt; idx++) */
+
+    return ret;
+}
+
+rt_err_t dlmodule_load_shared_object(int fd, Elf32_Ehdr *elf_hdr,
+    rt_dlmodule_t *module) {
+    rt_err_t ret;
+    Elf32_Phdr *prog_hdr;
+    Elf32_Shdr *sect_hdr;
+
+    do {
+        rt_uint32_t idx;
+        Elf32_Addr init = 0;
+        Elf32_Addr fini = 0;
+        Elf32_Addr vstart_addr = 0;
+        Elf32_Addr vend_addr = 0;
+        rt_bool_t has_vstart = RT_FALSE;
+        /* TODO: how to make RTMMAG? */
+        // rt_bool_t linked = !rt_memcmp(elf_hdr->e_ident, RTMMAG, SELFMAG);
+        Elf32_Dyn *dyntab = RT_NULL;
+        rt_uint8_t dyn_num = 0;
+
+        ret = RT_EOK;
+        module->mem_space = RT_NULL;
+        module->symtab = RT_NULL;
+        prog_hdr = RT_NULL;
+        sect_hdr = RT_NULL;
+        // LOG_D("linked %d", linked);
+        LOG_D("e_shnum %d", elf_hdr->e_shnum);
+        LOG_D("e_phnum %d", elf_hdr->e_phnum);
+
+        /* alloc prog_hdr */
+        prog_hdr = (Elf32_Phdr *)rt_malloc(sizeof(Elf32_Phdr));
+        if (!prog_hdr) BREAK_WITH_WARN(RT_ENOMEM, "prog mem err");
+
+        /* step 1: get prog size */
+        for (idx = 0; idx < elf_hdr->e_phnum; idx++) {
+            READ_PROG_HDR(fd, elf_hdr, idx, prog_hdr);
+            LOG_D("prog %d: tp %d fg %d, +%p @%p sz %d", idx,
+                prog_hdr->p_type, prog_hdr->p_flags, prog_hdr->p_offset,
+                prog_hdr->p_vaddr, prog_hdr->p_memsz);
+            if (PT_LOAD != prog_hdr->p_type) continue;
+
+            if (prog_hdr->p_memsz < prog_hdr->p_filesz)
+                BREAK_WITH_WARN(RT_EIO, "bad prog %d: p_memsz %d, p_filesz %d",
+                    idx, prog_hdr->p_memsz, prog_hdr->p_filesz);
+
+            if (!has_vstart) {
+                vstart_addr = prog_hdr->p_vaddr;
+                vend_addr = prog_hdr->p_vaddr + prog_hdr->p_memsz;
+                has_vstart = RT_TRUE;
+                if (vend_addr < vstart_addr)
+                    BREAK_WITH_WARN(RT_EIO,
+                        "bad prog %d: p_vaddr %d, p_memsz %d",
+                        idx, prog_hdr->p_vaddr, prog_hdr->p_memsz);
+            } else {
+                if (vend_addr > prog_hdr->p_vaddr) {
+                    BREAK_WITH_WARN(RT_EIO, "bad prog %d: out of order", idx);
+                } else if ((vend_addr + MAX_PADDING_SIZE) < prog_hdr->p_vaddr) {
+                    BREAK_WITH_WARN(RT_EIO, "bad prog %d: long padding", idx);
+                }
+
+                vend_addr = prog_hdr->p_vaddr + prog_hdr->p_memsz;
+                if (vend_addr < prog_hdr->p_vaddr)
+                    BREAK_WITH_WARN(RT_EIO, "bad prog %d: overflow", idx);
             }
-            else
-            {
+        }
+        if (RT_EOK != ret) break;
+
+        module->mem_size = vend_addr - vstart_addr;
+        LOG_D("mo @%p (sz %d)", vstart_addr, module->mem_size);
+        if (!module->mem_size) BREAK_WITH_WARN(RT_EIO, "bad elf: 0 size");
+
+        /* alloc module->mem_space */
+        module->mem_space = (rt_addr_t)rt_malloc(module->mem_size);
+        if (!module->mem_space) BREAK_WITH_WARN(RT_ENOMEM, "prog mem err");
+        LOG_D("mo mem_space @%p", module->mem_space);
+        rt_memset(module->mem_space, 0x00, module->mem_size);
+        module->vstart_addr = vstart_addr;
+        module->nref = 0;
+
+        /* step 2: load prog and get dyntab */
+        for (idx = 0; idx < elf_hdr->e_phnum; idx++) {
+            READ_PROG_HDR(fd, elf_hdr, idx, prog_hdr);
+            if ((PT_LOAD != prog_hdr->p_type) && \
+                (PT_DYNAMIC != prog_hdr->p_type)) continue;
+
+            if (PT_LOAD == prog_hdr->p_type) {
+                LOAD_PROG(fd, prog_hdr, module->mem_space + \
+                    (prog_hdr->p_vaddr - module->vstart_addr));
+            } else if (PT_DYNAMIC == prog_hdr->p_type) {
+                if ((vstart_addr > prog_hdr->p_vaddr) || \
+                    (vend_addr < prog_hdr->p_vaddr))
+                    BREAK_WITH_WARN(RT_EIO, "dyntab no loaded");
+
+                dyntab = (Elf32_Dyn *)(module->mem_space + \
+                    (prog_hdr->p_vaddr - module->vstart_addr));
+                dyn_num = prog_hdr->p_filesz / sizeof(Elf32_Dyn);
+            }
+        }
+        if (RT_EOK != ret) break;
+        LOG_D("dyn_num %d", dyn_num);
+        // LOG_HEX("prog", 16, module->mem_space, module->mem_size);
+        rt_free(prog_hdr);
+
+        /* step 3: process dyntab */
+        if (dyn_num) {
+            Elf32_Rel *plttab = RT_NULL;
+            Elf32_Rel *reltab = RT_NULL;
+            Elf32_Sym *symtab = RT_NULL;
+            rt_uint8_t *strtab = RT_NULL;
+
+            rt_uint32_t plt_cnt = 0;
+            rt_uint32_t rel_cnt = 0;
+            rt_uint32_t sym_cnt = 0;
+            rt_uint32_t export_sz = 0;
+
+            for (idx = 0; idx < dyn_num; idx++) {
+                LOG_D("dyn %d: tg %d val %p", idx, dyntab[idx].d_tag,
+                    dyntab[idx].d_un.d_ptr);
+                switch (dyntab[idx].d_tag) {
+                case DT_NULL:
+                    continue;
+
+                case DT_PLTGOT:
+                    LOG_D("PLTGOT @%p", dyntab[idx].d_un.d_ptr);
+                    break;
+
+                case DT_JMPREL:
+                    if ((vstart_addr > dyntab[idx].d_un.d_ptr) || \
+                        (vend_addr < dyntab[idx].d_un.d_ptr))
+                            BREAK_WITH_WARN(RT_EIO, "plttab no loaded");
+                    plttab = module->mem_space + \
+                             (dyntab[idx].d_un.d_ptr - module->vstart_addr);
+                    break;
+                case DT_PLTREL:
+                    if (dyntab[idx].d_un.d_val == DT_REL) {
+                        LOG_D("[REL]");
+                    } else {
+                        LOG_D("[RELA]");
+                    }
+                    break;
+                case DT_PLTRELSZ:
+                    plt_cnt = dyntab[idx].d_un.d_val / sizeof(Elf32_Rel);
+                    LOG_D("plt_cnt %d", plt_cnt);
+                    break;
+
+                case DT_REL:
+                    if ((vstart_addr > dyntab[idx].d_un.d_ptr) || \
+                        (vend_addr < dyntab[idx].d_un.d_ptr))
+                        BREAK_WITH_WARN(RT_EIO, "reltab no loaded");
+                    reltab = module->mem_space + \
+                             (dyntab[idx].d_un.d_ptr - module->vstart_addr);
+                    break;
+                case DT_RELSZ:
+                    rel_cnt = dyntab[idx].d_un.d_val / sizeof(Elf32_Rel);
+                    LOG_D("rel_cnt %d", rel_cnt);
+                    break;
+                case DT_RELENT:
+                    if (sizeof(Elf32_Rel) != dyntab[idx].d_un.d_val)
+                        BREAK_WITH_WARN(RT_EIO, "bad DT_RELENT");
+                    break;
+                case DT_STRTAB:
+                    strtab = module->mem_space + \
+                             (dyntab[idx].d_un.d_ptr - module->vstart_addr);
+                    break;
+                case DT_STRSZ:
+                    // LOG_D("DT_STRSZ %d", dyntab[idx].d_un.d_val);
+                    break;
+                case DT_SYMTAB:
+                    symtab = module->mem_space + \
+                             (dyntab[idx].d_un.d_ptr - module->vstart_addr);
+                    break;
+                case DT_SYMENT:
+                    if (sizeof(Elf32_Sym) != dyntab[idx].d_un.d_val)
+                        BREAK_WITH_WARN(RT_EIO, "bad DT_SYMENT");
+                    break;
+
+                case DT_INIT:
+                    init = dyntab[idx].d_un.d_ptr;
+                    LOG_D("init @%p", init);
+                    break;
+                case DT_FINI:
+                    fini = dyntab[idx].d_un.d_ptr;
+                    LOG_D("fini @%p", fini);
+                    break;
+
+                default:
+                    break;
+                }
+            }
+            if (RT_EOK != ret) break;
+            if (!rel_cnt && !plttab) BREAK_WITH_WARN(RT_EIO, "bad dyntab");
+            if (!symtab || !strtab) BREAK_WITH_WARN(RT_EIO, "bad dyntab");
+
+            ret = dlmodule_load_reltab(module, reltab, rel_cnt, symtab, strtab);
+            if (RT_EOK != ret) break;
+            ret = dlmodule_load_reltab(module, plttab, plt_cnt, symtab, strtab);
+            if (RT_EOK != ret) break;
+
+            /* step 4: get sym_cnt */
+            /* alloc sect_hdr */
+            sect_hdr = (Elf32_Shdr *)rt_malloc(sizeof(Elf32_Shdr));
+            if (!sect_hdr) BREAK_WITH_WARN(RT_ENOMEM, "sect mem err");
+
+            for (idx = 0; idx < elf_hdr->e_shnum; idx++) {
+                READ_SECT_HDR(fd, elf_hdr, idx, sect_hdr);
+                LOG_D("sect %d: @%p name %d, tp %x, fg %x, if %x", idx,
+                    sect_hdr->sh_addr, sect_hdr->sh_name, sect_hdr->sh_type,
+                    sect_hdr->sh_flags, sect_hdr->sh_info);
+                /* check if .dynsym */
+                if (IS_DYNSYM(sect_hdr)) {
+                    sym_cnt = sect_hdr->sh_size / sizeof(Elf32_Sym);
+                    break;
+                }
+            }
+            if (RT_EOK != ret) break;
+            LOG_D("sym_cnt: %p", sym_cnt);
+            rt_free(sect_hdr);
+
+            /* step 5: process symtab */
+            /* get export symbal table size */
+            for (idx = 0, export_sz = 0; idx < sym_cnt; idx++) {
+                if ((ELF_ST_BIND(symtab[idx].st_info) != STB_GLOBAL) ||
+                    (ELF_ST_TYPE(symtab[idx].st_info) != STT_FUNC)) {
+                    continue;
+                }
+                export_sz++;
+            }
+            LOG_D("export_sz: %d", export_sz);
+
+            module->nsym = export_sz;
+            if (export_sz) {
+                /* alloc module->symtab */
+                module->symtab = (struct rt_module_symtab *)rt_malloc(
+                    export_sz * sizeof(struct rt_module_symtab));
+                if (!module->symtab)
+                    BREAK_WITH_WARN(RT_ENOMEM, "module->symtab mem err");
+
+                /* load module->symtab */
+                for (idx = 0, export_sz = 0; idx < sym_cnt; idx++) {
+                    rt_size_t len;
+
+                    if ((ELF_ST_BIND(symtab[idx].st_info) != STB_GLOBAL) ||
+                        (ELF_ST_TYPE(symtab[idx].st_info) != STT_FUNC)) {
+                        continue;
+                    }
+
+                    len = rt_strlen(
+                        (const char *)(strtab + symtab[idx].st_name)) + 1;
+                    module->symtab[export_sz].addr = (void *)(\
+                        module->mem_space + \
+                        (symtab[idx].st_value - module->vstart_addr));
+                    module->symtab[export_sz].name = (char *)rt_malloc(len);
+                    rt_memset((void *)module->symtab[export_sz].name, 0, len);
+                    rt_memcpy((void *)module->symtab[export_sz].name,
+                        strtab + symtab[idx].st_name, len);
+                    LOG_D("sym %d: %s -> %p", export_sz,
+                        module->symtab[export_sz].name,
+                        module->symtab[export_sz].addr);
+                    export_sz++;
+                }
+            }
+        }
+
+        /* set entry_addr */
+        module->entry_addr = module->mem_space + \
+            (elf_hdr->e_entry - module->vstart_addr);
+        if (init) {
+            module->init_func = module->mem_space + \
+                                (init - module->vstart_addr);
+        }
+        if (fini) {
+            module->cleanup_func = module->mem_space + \
+                                   (fini - module->vstart_addr);
+        }
+        LOG_D("entry_addr: %p", module->entry_addr);
+        LOG_D("init_func: %p", module->init_func);
+        LOG_D("cleanup_func: %p", module->cleanup_func);
+        return ret;
+    } while (0);
+
+    if (prog_hdr) rt_free(prog_hdr);
+    if (sect_hdr) rt_free(sect_hdr);
+    return ret;
+}
+
+#ifndef __arm__
+
+rt_err_t dlmodule_load_relocated_object(int fd, Elf32_Ehdr *elf_hdr,
+    rt_dlmodule_t *module) {
+    rt_err_t ret;
+    Elf32_Shdr *sect_hdr;
+    rt_uint8_t *shstrab;
+    Elf32_Rel *reltab;
+    Elf32_Sym *symtab;
+    rt_uint8_t *strtab;
+
+    do {
+        rt_uint8_t *ptr;
+        rt_uint32_t idx;
+        rt_uint32_t module_size, text_addr, rodata_addr, data_addr, bss_addr;
+
+        ret = RT_EOK;
+        sect_hdr = RT_NULL;
+        shstrab = RT_NULL;
+        reltab = RT_NULL;
+        symtab = RT_NULL;
+        strtab = RT_NULL;
+
+        LOG_D("e_shnum %d", elf_hdr->e_shnum);
+        LOG_D("e_phnum %d", elf_hdr->e_phnum);
+
+        /* alloc sect_hdr */
+        sect_hdr = (Elf32_Shdr *)rt_malloc(sizeof(Elf32_Shdr));
+        if (!sect_hdr) BREAK_WITH_WARN(RT_ENOMEM, "sect mem err");
+
+        /* get module size */
+        module_size = 0;
+        text_addr = 0;
+        for (idx = 0; idx < elf_hdr->e_shnum; idx++) {
+            READ_SECT_HDR(fd, elf_hdr, idx, sect_hdr);
+
+            if (IS_PROG(sect_hdr) && IS_AX(sect_hdr)) {
+                /* text */
+                module_size += sect_hdr->sh_size;
+                text_addr = sect_hdr->sh_addr;
+                LOG_D("text sz 0x%p, addr 0x%p", sect_hdr->sh_size,
+                    sect_hdr->sh_addr);
+            } else if (IS_PROG(sect_hdr) && IS_ALLOC(sect_hdr)) {
+                /* rodata */
+                module_size += sect_hdr->sh_size;
+                LOG_D("rodata sz 0x%p", sect_hdr->sh_size);
+            } else if (IS_PROG(sect_hdr) && IS_AW(sect_hdr)) {
+                /* data */
+                module_size += sect_hdr->sh_size;
+                LOG_D("data sz 0x%p", sect_hdr->sh_size);
+            } else if (IS_NOPROG(sect_hdr) && IS_AW(sect_hdr)) {
+                /* bss */
+                module_size += sect_hdr->sh_size;
+                LOG_D("bss sz 0x%p", sect_hdr->sh_size);
+            }
+        }
+
+        if (!module_size) BREAK_WITH_WARN(RT_EIO, "bad elf: 0 size");
+
+        /* alloc module->mem_space */
+        module->mem_space = (rt_addr_t)rt_malloc(module_size);
+        if (!module->mem_space) BREAK_WITH_WARN(RT_ENOMEM, "prog mem err");
+        LOG_D("so mem_space: %p", module->mem_space);
+        rt_memset(module->mem_space, 0x00, module_size);
+        module->mem_size = module_size;
+        module->vstart_addr = 0;
+        module->nref = 0;
+
+        /* load module */
+        ptr = module->mem_space;
+        rodata_addr = 0;
+        data_addr = 0;
+        bss_addr = 0;
+        for (idx = 0; idx < elf_hdr->e_shnum; idx++) {
+            READ_SECT_HDR(fd, elf_hdr, idx, sect_hdr);
+
+            if (IS_PROG(sect_hdr) && IS_AX(sect_hdr)) {
+                /* load text */
+                LOAD_SECT(fd, sect_hdr, ptr);
+                LOG_D("load text 0x%p, sz 0x%p", ptr, sect_hdr->sh_size);
+                ptr += sect_hdr->sh_size;
+            } else if (IS_PROG(sect_hdr) && IS_ALLOC(sect_hdr)) {
+                /* load rodata */
+                LOAD_SECT(fd, sect_hdr, ptr);
+                LOG_D("load rodata 0x%p, sz 0x%p", ptr, sect_hdr->sh_size);
+                rodata_addr = (rt_uint32_t)ptr;
+                ptr += sect_hdr->sh_size;
+            } else if (IS_PROG(sect_hdr) && IS_AW(sect_hdr)) {
+                /* load data */
+                LOAD_SECT(fd, sect_hdr, ptr);
+                LOG_D("load data 0x%p, sz 0x%p", ptr, sect_hdr->sh_size);
+                data_addr = (rt_uint32_t)ptr;
+                ptr += sect_hdr->sh_size;
+            } else if (IS_NOPROG(sect_hdr) && IS_AW(sect_hdr)) {
+                /* load bss */
+                rt_memset(ptr, 0x00, sect_hdr->sh_size);
+                LOG_D("load bss 0x%p, sz 0x%p", ptr, sect_hdr->sh_size);
+                bss_addr = (rt_uint32_t)ptr;
+                ptr += sect_hdr->sh_size;
+            }
+        }
+        if (RT_EOK != ret) break;
+
+        /* set entry_addr */
+        module->entry_addr = (rt_dlmodule_entry_func_t)\
+            ((rt_uint8_t *)module->mem_space + elf_hdr->e_entry - text_addr);
+
+        /* get shstrab sect_hdr */
+        READ_SECT_HDR(fd, elf_hdr, elf_hdr->e_shstrndx, sect_hdr);
+        LOG_D("shstrab sz %d", sect_hdr->sh_size);
+
+        /* alloc shstrab */
+        shstrab = (rt_uint8_t *)rt_malloc(sect_hdr->sh_size);
+        if (!shstrab) BREAK_WITH_WARN(RT_ENOMEM, "shstrab mem err");
+        /* load shstrab */
+        LOAD_SECT(fd, sect_hdr, shstrab);
+
+        /* process relocation */
+        for (idx = 0; idx < elf_hdr->e_shnum; idx++) {
+            rt_uint32_t i, rel_num;
+
+            READ_SECT_HDR(fd, elf_hdr, idx, sect_hdr);
+            if (!IS_REL(sect_hdr)) continue;
+
+            rel_num = (rt_uint32_t)(sect_hdr->sh_size / sizeof(Elf32_Rel));
+            LOG_D("rel_num %d", rel_num);
+
+            /* allo reltab */
+            LOG_D("reltab sz %d", sect_hdr->sh_size);
+            reltab = (Elf32_Rel *)rt_malloc(sect_hdr->sh_size);
+            if (!reltab) BREAK_WITH_WARN(RT_ENOMEM, "reltab mem err");
+            /* load reltab */
+            LOAD_SECT(fd, sect_hdr, reltab);
+
+            /* rel_sect -> symtab */
+            READ_SECT_HDR(fd, elf_hdr, sect_hdr->sh_link, sect_hdr);
+            LOG_D("symtab sz %d", sect_hdr->sh_size);
+
+            /* alloc symtab */
+            symtab = (Elf32_Sym *)rt_malloc(sect_hdr->sh_size);
+            if (!symtab) BREAK_WITH_WARN(RT_ENOMEM, "symtab mem err");
+            /* load symtab */
+            LOAD_SECT(fd, sect_hdr, symtab);
+
+            /* symtab -> strtab */
+            READ_SECT_HDR(fd, elf_hdr, sect_hdr->sh_link, sect_hdr);
+            LOG_D("strtab sz %d", sect_hdr->sh_size);
+
+            /* alloc strtab */
+            strtab = (rt_uint8_t *)rt_malloc(sect_hdr->sh_size);
+            if (!strtab) BREAK_WITH_WARN(RT_ENOMEM, "strtab mem err");
+            /* load strtab */
+            LOAD_SECT(fd, sect_hdr, strtab);
+
+            /* do relocation */
+            for (i = 0; i < rel_num; i++) {
                 Elf32_Addr addr;
+                Elf32_Sym *sym = &symtab[ELF32_R_SYM(reltab[i].r_info)];
+                LOG_D("sym %s shndx %d", strtab + sym->st_name, sym->st_shndx);
 
-                if (ELF32_R_TYPE(rel->r_info) != R_ARM_V4BX)
-                {
-                    LOG_D("relocate symbol: %s", strtab + sym->st_name);
-
+                addr = 0;
+                if (STT_FUNC == ELF_ST_TYPE(sym->st_info)) {
+                    addr = (Elf32_Addr)((rt_uint8_t *)module->mem_space - \
+                        text_addr + sym->st_value);
+                } else if (SHT_NULL != sym->st_shndx) {
+                    if ((STT_SECTION == ELF_ST_TYPE(sym->st_info)) ||
+                        (STT_OBJECT == ELF_ST_TYPE(sym->st_info))) {
+                        READ_SECT_HDR(fd, elf_hdr, sym->st_shndx, sect_hdr);
+                        if (!rt_strncmp((char *)sect_hdr->sh_name, 
+                            ELF_RODATA, sizeof(ELF_RODATA))) {
+                            /* relocate rodata */
+                            addr = rodata_addr + sym->st_value;
+                            LOG_D("relocate rodata 0x%p", addr);
+                        } else if (!rt_strncmp((char *)sect_hdr->sh_name,
+                            ELF_BSS, sizeof(ELF_BSS))) {
+                            /* relocate bss */
+                            addr = bss_addr + sym->st_value;
+                            LOG_D("relocate bss 0x%p", addr);
+                        } else if (!rt_strncmp((char *)sect_hdr->sh_name,
+                            ELF_DATA, sizeof(ELF_DATA))) {
+                            /* relocate data */
+                            addr = data_addr + sym->st_value;
+                            LOG_D("relocate data 0x%p", addr);
+                        }
+                    }
+                } else if (R_ARM_V4BX != ELF32_R_TYPE(reltab[i].r_info)) {
                     /* need to resolve symbol in kernel symbol table */
-                    addr = dlmodule_symbol_find((const char *)(strtab + sym->st_name));
-                    if (addr != (Elf32_Addr)RT_NULL)
-                    {
-                        dlmodule_relocate(module, rel, addr);
-                        LOG_D("symbol addr 0x%x", addr);
+                    addr = dlmodule_symbol_find(
+                        (const char *)(strtab + sym->st_name));
+                    if (!addr) {
+                        BREAK_WITH_WARN(RT_ERROR, "unsolved sym %s",
+                            strtab + sym->st_name);
                     }
-                    else
-                        LOG_E("Module: can't find %s in kernel symbol table",
-                                   strtab + sym->st_name);
+                } else {
+                    addr = (Elf32_Addr)((rt_uint8_t *)module->mem_space - \
+                        text_addr + sym->st_value);
                 }
-                else
-                {
-                    addr = (Elf32_Addr)((rt_uint8_t *) module->mem_space - module_addr + sym->st_value);
-                    dlmodule_relocate(module, rel, addr);
+
+                if (addr) {
+                    Elf32_Addr *where = module->mem_space + \
+                        (reltab[idx].r_offset - module->vstart_addr);
+                    *where = dlmodule_relocate(ELF32_R_TYPE(reltab[idx].r_info),
+                        where, addr);
+                    LOG_D("sym %s -> %p", strtab + sym->st_name, addr);
                 }
-            }
+            } /* for (i = 0; i < rel_num; i++) */
+            if (RT_EOK != ret) break;
+        } /* for (idx = 0; idx < elf_hdr->e_shnum; idx++) */
+        if (RT_EOK != ret) break;
 
-            rel ++;
-        }
-    }
+        rt_free(sect_hdr);
+        rt_free(shstrab);
+        rt_free(reltab);
+        rt_free(symtab);
+        rt_free(strtab);
+        return ret;
+    } while (0);
 
-    return RT_EOK;
+    if (sect_hdr) rt_free(sect_hdr);
+    if (shstrab) rt_free(shstrab);
+    if (reltab) rt_free(reltab);
+    if (symtab) rt_free(symtab);
+    if (strtab) rt_free(strtab);
+    if (module->mem_space) rt_free(module->mem_space);
+    return ret;
 }
 
+#endif /* __arm__ */
 
 #endif /* RT_USING_MODULE */

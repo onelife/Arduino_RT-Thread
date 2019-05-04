@@ -15,48 +15,41 @@
 #include <string.h>
 #include "dlmodule.h"
 
-#define MODULE_ROOT_DIR     "/modules"
+#define MODULE_ROOT_DIR "/lib"
 
-void* dlopen(const char *filename, int flags)
-{
-    struct rt_dlmodule *module;
+
+void* dlopen(const char *filename, int flags) {
+    rt_dlmodule_t *module;
     char *fullpath;
     const char*def_path = MODULE_ROOT_DIR;
 
     /* check parameters */
     RT_ASSERT(filename != RT_NULL);
+    (void)flags;
 
-    if (filename[0] != '/') /* it's a relative path, prefix with MODULE_ROOT_DIR */
-    {
+    /* it's a relative path, prefix with MODULE_ROOT_DIR */
+    if (filename[0] != '/') {
         fullpath = rt_malloc(strlen(def_path) + strlen(filename) + 2);
-
         /* join path and file name */
         rt_snprintf(fullpath, strlen(def_path) + strlen(filename) + 2,
             "%s/%s", def_path, filename);
-    }
-    else
-    {
-        fullpath = (char*)filename; /* absolute path, use it directly */
+    } else {
+        /* absolute path, use it directly */
+        fullpath = (char*)filename;
     }
 
     rt_enter_critical();
-
     /* find in module list */
     module = dlmodule_find(fullpath);
-
-    if(module != RT_NULL) 
-    {
+    if (module != RT_NULL) {
         rt_exit_critical();
         module->nref++;
-    }
-    else 
-    {
+    } else {
         rt_exit_critical();
         module = dlmodule_load(fullpath);
     }
 
-    if(fullpath != filename)
-    {
+    if (fullpath != filename) {
         rt_free(fullpath);
     }
 

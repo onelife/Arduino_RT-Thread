@@ -8,8 +8,8 @@
  * 2010-11-17     yi.qiu      first version
  */
 
-#ifndef __DLFCN_H_
-#define __DLFCN_H_
+#ifndef __DLFCN_H__
+#define __DLFCN_H__
 
 #define RTLD_LAZY       0x00000
 #define RTLD_NOW        0x00001
@@ -20,9 +20,9 @@
 #define RTLD_DEFAULT    ((void*)1)
 #define RTLD_NEXT       ((void*)2)
 
-void *dlopen (const char *filename, int flag);
+void *dlopen(const char *filename, int flag);
+int dlclose (void *handle);
 const char *dlerror(void);
 void *dlsym(void *handle, const char *symbol);
-int dlclose (void *handle);
 
-#endif
+#endif /* __DLFCN_H__ */

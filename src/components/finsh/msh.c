@@ -217,10 +217,10 @@ int msh_exec_module(const char *cmd_line, int size)
         /* try to open program */
         fd = open(pg_name, O_RDONLY, 0);
 
-        /* search in /bin path */
+        /* search in /mo path */
         if (fd < 0)
         {
-            rt_snprintf(pg_name, length - 1, "/bin/%.*s", cmd_length, cmd_line);
+            rt_snprintf(pg_name, length - 1, "/mo/%.*s", cmd_length, cmd_line);
             fd = open(pg_name, O_RDONLY, 0);
         }
     }
@@ -232,10 +232,10 @@ int msh_exec_module(const char *cmd_line, int size)
         strcat(pg_name, ".mo");
         fd = open(pg_name, O_RDONLY, 0);
 
-        /* search in /bin path */
+        /* search in /mo path */
         if (fd < 0)
         {
-            rt_snprintf(pg_name, length - 1, "/bin/%.*s.mo", cmd_length, cmd_line);
+            rt_snprintf(pg_name, length - 1, "/mo/%.*s.mo", cmd_length, cmd_line);
             fd = open(pg_name, O_RDONLY, 0);
         }
     }
