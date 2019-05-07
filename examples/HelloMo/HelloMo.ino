@@ -19,7 +19,7 @@
       - add options "-mlong-calls -fPIC"
 
     2. Link
-    - you may copy the compiling command from Arduino's output window
+    - you may copy the link command from Arduino's output window
     - keep only "hello_mo.c.o"
     - remove option "-Wl,--unresolved-symbols=report-all"
     - remove option "-LC:\\Users\\onelife\\AppData\\Local\\Temp\\arduino_build_362673" 

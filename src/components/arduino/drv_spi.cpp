@@ -43,7 +43,10 @@ extern "C" {
 #endif /* RT_USING_ULOG */
 
 #if CONFIG_USING_SPI0
-# define SPI0                       SPI
+# define _SPI0                      SPI
+#endif
+#if CONFIG_USING_SPI1
+# define _SPI1                      SPI1
 #endif
 #define SPI_NAME(ch)                "SPI"#ch
 #define SPI_CTX(idx)                spi_ctx[idx]
@@ -374,13 +377,13 @@ rt_err_t bsp_hw_spi_init(void) {
         switch (chn) {
         #if CONFIG_USING_SPI0
         case 0:
-            ldev = (void *)&SPI0;
+            ldev = (void *)&_SPI0;
             name = SPI_NAME(0);
             break;
         #endif
         #if CONFIG_USING_SPI1
         case 1:
-            ldev = (void *)&SPI1;
+            ldev = (void *)&_SPI1;
             name = SPI_NAME(1);
             break;
         #endif

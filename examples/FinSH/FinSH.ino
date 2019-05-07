@@ -33,7 +33,7 @@
     When using FinSH with MSH (default, CONFIG_USING_FINSH == 1 &&
     CONFIG_USING_MSH == 1):
     - please append the following line to "shell_cmd.h":
-      ADD_MSH_CMD(led, Turn on/off builtin LED, led, rt_uint32_t, rt_uint32_t id, rt_uint8_t state)
+      ADD_MSH_CMD(led, Turn on/off builtin LED, led, int, int argc, char **argv)
     - due to MSH doesn't support shell variables, "ADD_SHELL_VAR" has no effect
 
     After uploaded, please send the following command through "Serial Monitor"
@@ -65,7 +65,7 @@ extern "C" {
 
 #else /* !CONFIG_USING_MSH */
 
-  rt_uint32_t led(int argc, char **argv) {
+  int led(int argc, char **argv) {
     // argc - the number of arguments
     // argv[0] - command name, e.g. "led"
     // argv[n] - nth argument in the type of char array

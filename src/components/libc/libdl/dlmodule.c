@@ -30,10 +30,17 @@
 # define LOG_D                      LOG_E
 #endif /* RT_USING_ULOG */
 
-#define MODULE_MIN_STACK_SIZE       (1024 * 2)
-#define MODULE_MAX_STACK_SIZE       (1024 * 32)
-#define MODULE_DEFAULT_STACK_SIZE   MODULE_MIN_STACK_SIZE
-#define MODULE_DEFAULT_TICK         (10)
+#ifndef MODULE_THREAD_PRIORITY
+# define MODULE_THREAD_PRIORITY     (RT_THREAD_PRIORITY_MAX - 1)
+#endif
+#ifndef MODULE_THREAD_STACK_SIZE
+# define MODULE_THREAD_STACK_SIZE   (2 * 1024)
+#endif
+#ifndef MODULE_THREAD_TICK
+# define MODULE_THREAD_TICK         (10)
+#endif
+#define MODULE_MIN_STACK_SIZE       (1 * 1024)
+#define MODULE_MAX_STACK_SIZE       (10 * 1024)
 
 #define BREAK_WITH_WARN(err, msg, args...) {\
     LOG_W(msg, ##args); \
@@ -210,8 +217,8 @@ rt_dlmodule_t *dlmodule_create(void) {
     if (!module) return RT_NULL;
 
     module->stat = RT_DLMODULE_STAT_INIT;
-    module->priority = RT_THREAD_PRIORITY_MAX - 1;
-    module->stack_size = MODULE_DEFAULT_STACK_SIZE;
+    module->priority = MODULE_THREAD_PRIORITY;
+    module->stack_size = MODULE_THREAD_STACK_SIZE;
     rt_list_init(&(module->object_list));
     LOG_D("mo %s create", module->parent.name);
 
@@ -553,9 +560,10 @@ rt_dlmodule_t *dlmodule_exec(const char* pgname, const char* cmd,
         if (module->priority > RT_THREAD_PRIORITY_MAX) {
             module->priority = RT_THREAD_PRIORITY_MAX - 1;
         }
-        if ((module->stack_size < MODULE_MIN_STACK_SIZE) || \
-            (module->stack_size > MODULE_MAX_STACK_SIZE)) {
-            module->stack_size = MODULE_DEFAULT_STACK_SIZE;
+        if (module->stack_size < MODULE_MIN_STACK_SIZE) {
+            module->stack_size = MODULE_MIN_STACK_SIZE;
+        } else if (module->stack_size > MODULE_MAX_STACK_SIZE) {
+            module->stack_size = MODULE_MAX_STACK_SIZE;
         }
         LOG_D("priority: %d", module->priority);
         LOG_D("stack_size: %d", module->stack_size);
@@ -564,7 +572,7 @@ rt_dlmodule_t *dlmodule_exec(const char* pgname, const char* cmd,
             module->parent.name,
             _dlmodule_thread_entry, (void*)module, 
             module->stack_size, module->priority,
-            MODULE_DEFAULT_TICK);
+            MODULE_THREAD_TICK);
         LOG_D("mo tid %x", tid);
         LOG_D("stack_addr: %p", tid->stack_addr);
     

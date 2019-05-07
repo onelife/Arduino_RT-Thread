@@ -73,11 +73,16 @@
 
 #if (CONFIG_USING_MODULE)
 # define RT_USING_MODULE
+# define MODULE_THREAD_PRIORITY         (RT_THREAD_PRIORITY_MAX - 1)
+# define MODULE_THREAD_STACK_SIZE       (2 * 1024)
 # define IDLE_THREAD_STACK_SIZE         (512)
 #endif /* CONFIG_USING_MODULE */
 
 #if (CONFIG_USING_SPISD)
-# define CONFIG_USING_SPI1              (1)
+# ifdef ARDUINO_SAMD_MKRZERO
+#  define CONFIG_USING_SPI1             (1)
+# endif /* ARDUINO_SAMD_MKRZERO */
+
 # ifndef CONFIG_SD_CS_PIN
 #  ifdef ARDUINO_SAMD_MKRZERO
 #   define CONFIG_SD_CS_PIN             (SDCARD_SS_PIN)
@@ -89,9 +94,14 @@
 # ifndef CONFIG_SD_SPI_CHANNEL
 #  ifdef ARDUINO_SAMD_MKRZERO
 #   define CONFIG_SD_SPI_CHANNEL        1   /* (1) is wrong -_-! */
-#  else
-#   error "Please define CONFIG_SD_SPI_CHANNEL!"
 #  endif /* ARDUINO_SAMD_MKRZERO */
+# endif /* CONFIG_SD_SPI_CHANNEL */
+
+# if (!defined(CONFIG_USING_SPI0) && !defined(CONFIG_USING_SPI1))
+#  error "Please define CONFIG_USING_SPIx!"
+# endif /* (!defined(CONFIG_USING_SPI0) && !defined(CONFIG_USING_SPI1)) */
+# ifndef CONFIG_SD_SPI_CHANNEL
+#  error "Please define CONFIG_SD_SPI_CHANNEL!"
 # endif /* CONFIG_SD_SPI_CHANNEL */
 #endif /* CONFIG_USING_SPISD */
 
