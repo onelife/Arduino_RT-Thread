@@ -22,7 +22,14 @@
 # include "components/utilities/ulog/ulog.h"
 #else /* RT_USING_ULOG */
 # define LOG_E(format, args...)     rt_kprintf(format "\n", ##args)
-# define LOG_D                      LOG_E
+# define LOG_W                      LOG_E
+# ifdef BSP_SPI_DEBUG
+#  define LOG_D(format, args...)    rt_kprintf(format "\n", ##args)
+# else
+#  define LOG_D(format, args...)
+# endif
+# define LOG_I                      LOG_D
+# define LOG_HEX(format, args...)
 #endif /* RT_USING_ULOG */
 
 

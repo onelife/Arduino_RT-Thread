@@ -11,12 +11,13 @@
 #include "drv_common.h"
 
 /* Exported defines ----------------------------------------------------------*/
-#define SPI_DEFAULT_CONFIG          (SPI_CONFIG_MASTER)
 #define SPI_DEFAULT_SPEED           (250000)
+#define SPI_MAX_SPEED               (24000000)
 #define SPI_DEFAULT_RETRY           (3)
 #define SPI_DEFAULT_LIMIT           (512)
-
-#define SPI_CONFIG_MASTER           (1 << 0)    /* Master mode */
+#define SPI_FLAG_MORE               (rt_uint32_t)(0x01 << 16)
+#define SPI_FLAG_READ_TOKEN(tk)     (rt_uint32_t)((tk & 0xff) << 8)
+#define SPI_FLAG_IDLE_TOKEN(tk)     (rt_uint32_t)((tk & 0xff) << 0)
 
 /* Exported types ------------------------------------------------------------*/
 enum bsp_spi_channel {
@@ -31,7 +32,7 @@ enum bsp_spi_channel {
 
 struct bsp_spi_contex {
     rt_uint8_t chn;         /* channel number */
-    rt_uint8_t cfg;         /* config */
+    rt_bool_t start;
     rt_uint32_t spd;        /* speed */
     SPISettings set;        /* setting */
     void *ldev;             /* lower level device (Arduino SPI) */

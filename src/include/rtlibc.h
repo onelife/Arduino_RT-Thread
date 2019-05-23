@@ -20,7 +20,7 @@
 #include "libc/libc_dirent.h"
 #include "libc/libc_signal.h"
 #if !defined(CONFIG_ARDUINO)
-	#include "libc/libc_fdset.h"
+# include "libc/libc_fdset.h"
 #endif
 
 #if defined(__CC_ARM) || defined(__CLANG_ARM) || defined(__IAR_SYSTEMS_ICC__)

@@ -61,7 +61,7 @@ ADD_FINSH_CMD(list_timer, list timer in system, list_timer, void, void)
 ADD_MSH_CMD(ltmr, list timer in system, list_timer, void, void)
 #ifdef RT_USING_DEVICE
 ADD_FINSH_CMD(list_dev, list device in system, list_device, void, void)
-ADD_FINSH_CMD(ldev, list device in system, list_device, void, void)
+ADD_MSH_CMD(ldev, list device in system, list_device, void, void)
 #endif
 #ifdef RT_USING_DFS
 ADD_FINSH_CMD(df, show free space info of disk, df, int, const char *path)

@@ -939,7 +939,7 @@ const char *ulog_global_filter_kw_get(void)
 }
 
 #if defined(RT_USING_FINSH) && defined(FINSH_USING_MSH)
-#include <finsh.h>
+# include "components/finsh/finsh.h"
 
 static void ulog_tag_lvl(uint8_t argc, char **argv)
 {

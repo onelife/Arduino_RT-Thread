@@ -36,7 +36,7 @@
 #define __RT_DEF_H__
 
 /* include rtconfig header to import configuration */
-#include <rtconfig.h>
+#include "rtconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -1021,6 +1021,7 @@ enum
     RTGRAPHIC_PIXEL_FORMAT_ABGR888,
     RTGRAPHIC_PIXEL_FORMAT_ARGB565,
     RTGRAPHIC_PIXEL_FORMAT_ALPHA,
+    RTGRAPHIC_PIXEL_FORMAT_COLOR,
 };
 
 /**
@@ -1053,21 +1054,6 @@ struct rt_device_rect_info
     rt_uint16_t width;                                  /**< width */
     rt_uint16_t height;                                 /**< height */
 };
-
-/**
- * graphic operations
- */
-struct rt_device_graphic_ops
-{
-    void (*set_pixel) (const char *pixel, int x, int y);
-    void (*get_pixel) (char *pixel, int x, int y);
-
-    void (*draw_hline)(const char *pixel, int x1, int x2, int y);
-    void (*draw_vline)(const char *pixel, int x, int y1, int y2);
-
-    void (*blit_line) (const char *pixel, int x, int y, rt_size_t size);
-};
-#define rt_graphix_ops(device)          ((struct rt_device_graphic_ops *)(device->user_data))
 
 /**@}*/
 #endif

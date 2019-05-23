@@ -7,7 +7,7 @@
 #ifndef __RTDEBUG_H__
 #define __RTDEBUG_H__
 
-#include <rtconfig.h>
+#include "rtconfig.h"
 
 /* settings depend check */
 #ifdef RT_USING_POSIX

@@ -151,13 +151,13 @@
 #define RT_USING_MUTEX                  /* Required by DFS, DRV */
 #define RT_USING_EVENT                  /* Required by ? */
 #define RT_USING_MAILBOX                /* Required by ? */
-#define RT_USING_MESSAGEQUEUE           /* Required by ? */
+// #define RT_USING_MESSAGEQUEUE           /* Required by ? */
 // #define RT_USING_SIGNALS                /* Required by ? */
 // #define RT_USING_HOOK
 // #define RT_USING_IDLE_HOOK
 
 /* Memory Management Options */
-#define RT_USING_MEMPOOL                /* Required by SIG */
+#define RT_USING_MEMPOOL                /* Required by SIG, GUI */
 // #define RT_USING_MEMHEAP
 #define RT_USING_HEAP
 #define RT_USING_SMALL_MEM

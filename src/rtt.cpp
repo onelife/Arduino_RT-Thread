@@ -155,9 +155,6 @@ extern "C" {
     #if CONFIG_USING_SPI0 || CONFIG_USING_SPI1
     # include "components/arduino/drv_spi.h"
     #endif
-    #if CONFIG_USING_SPISD
-    # include "components/arduino/drv_spisd.h"
-    #endif
     #if CONFIG_USING_FINSH
     # include "components/finsh/shell.h"
     #endif
@@ -179,10 +176,18 @@ extern "C" {
     #ifdef RT_USING_MODULE
     # include "components/libc/libdl/dlmodule.h"
     #endif
-
+    #if CONFIG_USING_SPISD
+    # include "components/arduino/drv_spisd.h"
+    #endif
+    #if CONFIG_USING_ILI
+    # include "components/arduino/drv_spiili.h"
+    #endif
 }
+#if CONFIG_USING_GUI
+# include <rttgui.h>
+#endif
 
-/* Driver initialization */
+/* Driver init */
 void rt_driver_init(void) {
     #if (CONFIG_USING_CONSOLE)
         SERIAL_DEVICE.begin(9600);
@@ -196,28 +201,39 @@ void rt_driver_init(void) {
     #endif
 }
 
-/* High level driver initialization */
+/* High level driver init */
 void rt_high_driver_init(void) {
+    rt_err_t ret;
+
     #if CONFIG_USING_SPISD
-        rt_err_t ret = bsp_hw_spiSd_init();
+        ret = bsp_hw_spiSd_init();
         RT_ASSERT(RT_EOK == ret);
-        (void)ret;
+    #endif
+    #if CONFIG_USING_ILI
+        ret = bsp_hw_spiIli_init();
+        RT_ASSERT(RT_EOK == ret);
+    #endif
+    (void)ret;
+
+    #if CONFIG_USING_GUI
+        RTT_GUI.begin();
     #endif
 }
 
-/* Component initialization */
+/* Component init */
 void rt_components_init(void) {
+    #ifdef ULOG_BACKEND_USING_CONSOLE
+        (void)ulog_console_backend_init();
+    #elif defined(RT_USING_ULOG)
+        (void)ulog_init();
+    #endif
+
     /* INIT_BOARD_EXPORT */
     rt_high_driver_init();
 
     /* INIT_PREV_EXPORT */
     #ifdef RT_USING_DFS
         (void)dfs_init();
-    #endif
-    #ifdef ULOG_BACKEND_USING_CONSOLE
-        (void)ulog_console_backend_init();
-    #elif defined(RT_USING_ULOG)
-        (void)ulog_init();
     #endif
 
     /* INIT_DEVICE_EXPORT */
@@ -251,10 +267,15 @@ void rt_components_init(void) {
 
 /* Arduino thread */
 void arduino_thread_entry(void *param) {
+    rt_thread_t self = rt_thread_self();
     (void)param;
 
-    /* initialize components */
+    /* init components */
     rt_components_init();
+
+    /* reset priority */
+    rt_thread_control(self, RT_THREAD_CTRL_CHANGE_PRIORITY,
+        &self->init_priority);
 
     /* run Arduino loop here */
     while (1) {
@@ -267,17 +288,24 @@ void arduino_thread_entry(void *param) {
 static rt_uint8_t arduino_stack[CONFIG_ARDUINO_STACK_SIZE];
 static struct rt_thread arduino_thread;
 
-/* Application initialization */
+/* Application init */
 void rt_application_init(void) {
+    rt_uint32_t tmp_prio = 1;
     rt_err_t ret = rt_thread_init(
         &arduino_thread, "Arduino",
         arduino_thread_entry, RT_NULL,
         arduino_stack, sizeof(arduino_stack),
         CONFIG_ARDUINO_PRIORITY, CONFIG_ARDUINO_TICK);
     RT_ASSERT(RT_EOK == ret);
-    (void)ret;
 
-    rt_thread_startup(&arduino_thread);
+    /* raise priority */
+    ret = rt_thread_startup(&arduino_thread);
+    RT_ASSERT(RT_EOK == ret);
+    ret = rt_thread_control(&arduino_thread, RT_THREAD_CTRL_CHANGE_PRIORITY,
+        &tmp_prio);
+    RT_ASSERT(RT_EOK == ret);
+
+    (void)ret;
 }
 
 

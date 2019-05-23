@@ -35,11 +35,14 @@ extern "C" {
 # include "components/utilities/ulog/ulog.h"
 #else /* RT_USING_ULOG */
 # define LOG_E(format, args...)     rt_kprintf(format "\n", ##args)
+# define LOG_W                      LOG_E
 # ifdef BSP_SPI_DEBUG
-#  define LOG_D(format, args...)    rt_kprintf(format "\n", ##args)
+#  define LOG_I(format, args...)    rt_kprintf(format "\n", ##args)
 # else
-#  define LOG_D(format, args...)
+#  define LOG_I(format, args...)
 # endif
+# define LOG_D                      LOG_I
+# define LOG_HEX(format, args...)
 #endif /* RT_USING_ULOG */
 
 #if CONFIG_USING_SPI0
@@ -51,10 +54,20 @@ extern "C" {
 #define SPI_NAME(ch)                "SPI"#ch
 #define SPI_CTX(idx)                spi_ctx[idx]
 #define SPI_DEV(ctx)                ((SPIClass *)((ctx)->ldev))
-#define SPI_START(ctx)              LOG_D("[SPI%d] START", ctx->chn); \
-                                    SPI_DEV(ctx)->beginTransaction(ctx->set)
-#define SPI_STOP(ctx)               LOG_D("[SPI%d] STOP", ctx->chn); \
-                                    SPI_DEV(ctx)->endTransaction()
+#define SPI_START(ctx)              { \
+    if (!ctx->start) { \
+        LOG_D("[SPI%d] START", ctx->chn); \
+        SPI_DEV(ctx)->beginTransaction(ctx->set); \
+        ctx->start = RT_TRUE; \
+    } \
+}
+#define SPI_STOP(ctx)               { \
+    if (ctx->start) { \
+        LOG_D("[SPI%d] STOP", ctx->chn); \
+        SPI_DEV(ctx)->endTransaction(); \
+        ctx->start = RT_FALSE; \
+    } \
+}
 #define SPI_TX(ctx, data)           (void)SPI_DEV(ctx)->transfer((rt_uint8_t)data)
 #define SPI_RX(ctx)                 SPI_DEV(ctx)->transfer(0xff)
 #define SPI_SET_SPEED(ctx, target)  \
@@ -64,28 +77,22 @@ if (target != ctx->spd) { \
     LOG_D("[SPI%d] speed=%d", ctx->chn, target); \
 }
 
+#define WAIT_IDLE(flags)            (!!(flags & 0x000000ff))
+#define WAIT_READ(flags)            (!!(flags & 0x0000ff00))
+#define IS_PENDING(flags)           (!!(flags & SPI_FLAG_MORE))
+#define IDLE_TOKEN(flags)           (rt_uint8_t)(flags & 0x000000ff)
+#define READ_TOKEN(flags)           (rt_uint8_t)((flags & 0x0000ff00) >> 8)
+
 /* Private variables ---------------------------------------------------------*/
 static struct bsp_spi_contex spi_ctx[CH_NUM];
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
-static rt_bool_t wait_idle(struct bsp_spi_contex *ctx) {
-    rt_uint32_t i;
-
-    for (i = 0; i < SPI_DEFAULT_LIMIT; i++) {
-        if (0xff == SPI_RX(ctx)) break;
-    }
-
-    LOG_D("[SPI%d] wait %d", ctx->chn, i);
-    return (i < SPI_DEFAULT_LIMIT);
-}
-
 static rt_bool_t wait_token(struct bsp_spi_contex *ctx, rt_uint8_t token) {
     rt_uint32_t i;
 
-    for (i = 0; i < SPI_DEFAULT_LIMIT; i++) {
+    for (i = 0; i < SPI_DEFAULT_LIMIT; i++)
         if (token == SPI_RX(ctx)) break;
-    }
 
     LOG_D("[SPI%d] wait token %d", ctx->chn, i);
     return (i < SPI_DEFAULT_LIMIT);
@@ -126,7 +133,7 @@ static rt_err_t bsp_spi_close(rt_device_t dev) {
     return ret;
 }
 
-static rt_size_t bsp_spi_read(rt_device_t dev, rt_off_t token, void *buf,
+static rt_size_t bsp_spi_read(rt_device_t dev, rt_off_t flags, void *buf,
     rt_size_t size) {
     struct bsp_spi_contex *ctx = (struct bsp_spi_contex *)(dev->user_data);
     rt_bool_t locked;
@@ -170,13 +177,15 @@ static rt_size_t bsp_spi_read(rt_device_t dev, rt_off_t token, void *buf,
 
             /* wait for idle */
             SPI_START(ctx);
-            for (i = 0; i < SPI_DEFAULT_RETRY; i++)
-                if (wait_idle(ctx)) break;
-            if (i >= SPI_DEFAULT_RETRY) {
-                SPI_STOP(ctx);
-                err = -RT_EBUSY;
-                LOG_W("[SPI%d E] read busy", ctx->chn);
-                break;
+            if (WAIT_IDLE(flags)) {
+                for (i = 0; i < SPI_DEFAULT_RETRY; i++)
+                    if (wait_token(ctx, IDLE_TOKEN(flags))) break;
+                if (i >= SPI_DEFAULT_RETRY) {
+                    SPI_STOP(ctx);
+                    err = -RT_EBUSY;
+                    LOG_W("[SPI%d E] read busy", ctx->chn);
+                    break;
+                }
             }
 
             /* send instruction */
@@ -186,9 +195,9 @@ static rt_size_t bsp_spi_read(rt_device_t dev, rt_off_t token, void *buf,
 
             /* receive data */
             LOG_D("[SPI%d] rx data [%d]", ctx->chn, size);
-            if (0 != token) {
+            if (WAIT_READ(flags)) {
                 for (i = 0; i < SPI_DEFAULT_RETRY; i++)
-                    if (wait_token(ctx, (rt_uint8_t)token)) break;
+                    if (wait_token(ctx, READ_TOKEN(flags))) break;
                 if (i >= SPI_DEFAULT_RETRY) {
                     SPI_STOP(ctx);
                     err = -RT_EIO;
@@ -198,7 +207,7 @@ static rt_size_t bsp_spi_read(rt_device_t dev, rt_off_t token, void *buf,
             }
             for (i = 0; i < size; i++)
                 *(rx_buf++) = SPI_RX(ctx);
-            SPI_STOP(ctx);
+            if (!IS_PENDING(flags)) SPI_STOP(ctx);
 
             ret = size;
         }
@@ -210,14 +219,13 @@ static rt_size_t bsp_spi_read(rt_device_t dev, rt_off_t token, void *buf,
     return ret;
 }
 
-static rt_size_t bsp_spi_write(rt_device_t dev, rt_off_t pos, const void *buf,
+static rt_size_t bsp_spi_write(rt_device_t dev, rt_off_t flags, const void *buf,
     rt_size_t size) {
     struct bsp_spi_contex *ctx = (struct bsp_spi_contex *)(dev->user_data);
     rt_bool_t locked;
     rt_err_t err;
     rt_size_t ret;
 
-    (void)pos;
     if (RT_NULL == buf) return -RT_EINVAL;
     if (RT_DEVICE_OFLAG_RDONLY == (ctx->dev.open_flag & 0x0003))
         return -RT_EINVAL;
@@ -246,13 +254,15 @@ static rt_size_t bsp_spi_write(rt_device_t dev, rt_off_t pos, const void *buf,
 
         /* busy wait */
         SPI_START(ctx);
-        for (i = 0; i < SPI_DEFAULT_RETRY; i++)
-            if (wait_idle(ctx)) break;
-        if (i >= SPI_DEFAULT_RETRY) {
-            SPI_STOP(ctx);
-            err = -RT_EBUSY;
-            LOG_W("[SPI%d E] write busy", ctx->chn);
-            break;
+        if (WAIT_IDLE(flags)) {
+            for (i = 0; i < SPI_DEFAULT_RETRY; i++)
+                if (wait_token(ctx, (IDLE_TOKEN(flags)))) break;
+            if (i >= SPI_DEFAULT_RETRY) {
+                SPI_STOP(ctx);
+                err = -RT_EBUSY;
+                LOG_W("[SPI%d E] write busy", ctx->chn);
+                break;
+            }
         }
 
         /* send instruction */
@@ -264,7 +274,7 @@ static rt_size_t bsp_spi_write(rt_device_t dev, rt_off_t pos, const void *buf,
         LOG_D("[SPI%d] tx data [%d]", ctx->chn, size);
         for (i = 0; i < size; i++)
             SPI_TX(ctx, *(tx_buf + i));
-        SPI_STOP(ctx);
+        if (!IS_PENDING(flags)) SPI_STOP(ctx);
 
         ret = size;
     } while (0);
@@ -318,13 +328,13 @@ static rt_err_t bsp_spi_control(rt_device_t dev, rt_int32_t cmd, void *args) {
  * @return rt_err_t - Error code
  *
  ******************************************************************************/
-static rt_err_t bsp_spi_contex_init(struct bsp_spi_contex *ctx,
-    rt_uint8_t chn, const char *name, rt_uint8_t cfg, void *ldev) {
+static rt_err_t bsp_spi_contex_init(struct bsp_spi_contex *ctx, rt_uint8_t chn,
+    const char *name, void *ldev) {
     rt_err_t ret;
 
     do {
         ctx->chn = chn;
-        ctx->cfg = cfg;
+        ctx->start = RT_FALSE;
         SPI_SET_SPEED(ctx, SPI_DEFAULT_SPEED);
         ctx->ldev = ldev;
 
@@ -391,8 +401,7 @@ rt_err_t bsp_hw_spi_init(void) {
             return -RT_ERROR;
         } 
 
-        ret = bsp_spi_contex_init(&SPI_CTX(i), chn, name, SPI_DEFAULT_CONFIG,
-            ldev);
+        ret = bsp_spi_contex_init(&SPI_CTX(i), chn, name, ldev);
         if (RT_EOK != ret) break;
 
         SPI_DEV(&SPI_CTX(i))->begin();

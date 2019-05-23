@@ -7,7 +7,7 @@
 #ifndef LIBC_STAT_H__
 #define LIBC_STAT_H__
 
-#include <rtconfig.h>
+#include "rtconfig.h"
 
 #if defined(RT_USING_NEWLIB) || defined(CONFIG_ARDUINO)
 /* use header file of newlib */

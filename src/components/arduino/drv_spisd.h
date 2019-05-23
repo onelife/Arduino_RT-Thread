@@ -10,7 +10,7 @@
 /* Exported defines ----------------------------------------------------------*/
 #define SD_NAME                 "SD"
 #define SD_SPEED_LOW            (250000)
-#define SD_SPEED_HIGH           (4000000)
+#define SD_SPEED_HIGH           (SPI_MAX_SPEED)
 
 #define SD_INIT_RETRY           (6)
 #define SD_TIMER_DELAY          (2 * RT_TICK_PER_SECOND)
