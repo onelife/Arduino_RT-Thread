@@ -47,6 +47,10 @@
 # define CONFIG_USING_SPISD             (ARDUINO_ARCH_SAMD)
 #endif
 
+#ifndef CONFIG_USING_ILI
+# define CONFIG_USING_ILI               (0)
+#endif
+
 #if (CONFIG_USING_CONSOLE)
 # ifndef CONFIG_SERIAL_DEVICE
 #  define CONFIG_SERIAL_DEVICE          (Serial)
@@ -104,6 +108,27 @@
 #  error "Please define CONFIG_SD_SPI_CHANNEL!"
 # endif /* CONFIG_SD_SPI_CHANNEL */
 #endif /* CONFIG_USING_SPISD */
+
+#if (CONFIG_USING_ILI)
+# ifndef CONFIG_ILI_CS_PIN
+#  error "Please define CONFIG_ILI_CS_PIN"
+# endif
+# ifndef CONFIG_ILI_DC_PIN
+#  error "Please define CONFIG_ILI_DC_PIN"
+# endif
+# ifndef CONFIG_ILI_SPI_CHANNEL
+#  error "Please define CONFIG_ILI_SPI_CHANNEL"
+# endif
+#endif /* CONFIG_USING_ILI */
+
+#if (CONFIG_USING_GUI)
+# ifndef CONFIG_GUI_WIDTH
+#  error "Please define CONFIG_GUI_WIDTH"
+# endif
+# ifndef CONFIG_GUI_HIGH
+#  error "Please define CONFIG_GUI_HIGH"
+# endif
+#endif /* CONFIG_USING_GUI */
 
 #ifndef CONFIG_USING_SPI0
 # define CONFIG_USING_SPI0              (0)
