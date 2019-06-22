@@ -155,6 +155,9 @@ extern "C" {
     #if CONFIG_USING_SPI0 || CONFIG_USING_SPI1
     # include "components/arduino/drv_spi.h"
     #endif
+    #if CONFIG_USING_IIC0 || CONFIG_USING_IIC1
+    # include "components/arduino/drv_iic.h"
+    #endif
     #if CONFIG_USING_FINSH
     # include "components/finsh/shell.h"
     #endif
@@ -182,6 +185,9 @@ extern "C" {
     #if CONFIG_USING_ILI
     # include "components/arduino/drv_spiili.h"
     #endif
+    #if CONFIG_USING_FT6206
+    # include "components/arduino/drv_iic_ft6206.h"
+    #endif
 }
 #if CONFIG_USING_GUI
 # include <rttgui.h>
@@ -189,16 +195,21 @@ extern "C" {
 
 /* Driver init */
 void rt_driver_init(void) {
+    rt_err_t ret;
+
     #if (CONFIG_USING_CONSOLE)
-        SERIAL_DEVICE.begin(9600);
+        SERIAL_DEVICE.begin(CONFIG_USART_SPEED);
         while (!SERIAL_DEVICE);
     #endif
-
-    #if CONFIG_USING_SPI0 || CONFIG_USING_SPI1
-        rt_err_t ret = bsp_hw_spi_init();
+    #if (CONFIG_USING_SPI0 || CONFIG_USING_SPI1)
+        ret = bsp_hw_spi_init();
         RT_ASSERT(RT_EOK == ret);
-        (void)ret;
     #endif
+    #if (CONFIG_USING_IIC0 || CONFIG_USING_IIC1)
+        ret = bsp_hw_iic_init();
+        RT_ASSERT(RT_EOK == ret);
+    #endif
+    (void)ret;
 }
 
 /* High level driver init */
@@ -211,6 +222,10 @@ void rt_high_driver_init(void) {
     #endif
     #if CONFIG_USING_ILI
         ret = bsp_hw_spiIli_init();
+        RT_ASSERT(RT_EOK == ret);
+    #endif
+    #if CONFIG_USING_FT6206
+        ret = bsp_hw_ft6206_init();
         RT_ASSERT(RT_EOK == ret);
     #endif
     (void)ret;

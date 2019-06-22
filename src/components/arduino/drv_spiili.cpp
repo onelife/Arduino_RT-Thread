@@ -14,16 +14,14 @@ extern "C" {
 #include <Arduino.h>
 #include <SPI.h>    /* Arduino library */
 
+#if CONFIG_USING_GUI
+# include <rttgui.h>
+#endif
+
 extern "C" {
 
 #include "drv_spi.h"
 #include "drv_spiili.h"
-
-#if CONFIG_USING_GUI
-# include "include/rtgui.h"
-#else
-# define rtgui_color_t rt_uint32_t
-#endif
 
 /***************************************************************************//**
  * @addtogroup Arduino
@@ -70,7 +68,6 @@ extern "C" {
 #define ILI_CTX()                   (&ili_ctx)
 #define ILI_LCTX()                  ((struct bsp_spi_contex *)(ILI_CTX()->ldev->user_data))
 #define ILI_DELAY(ms)               delay(ms)   /* Arduino function*/
-// #define ILI_FLAGS                   (0)
 #if CONFIG_USING_GUI
 # define SCOPE                      static
 #else

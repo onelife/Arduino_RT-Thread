@@ -84,7 +84,7 @@ if (target != ctx->spd) { \
 #define READ_TOKEN(flags)           (rt_uint8_t)((flags & 0x0000ff00) >> 8)
 
 /* Private variables ---------------------------------------------------------*/
-static struct bsp_spi_contex spi_ctx[CH_NUM];
+static struct bsp_spi_contex spi_ctx[SPI_CH_NUM];
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -140,14 +140,16 @@ static rt_size_t bsp_spi_read(rt_device_t dev, rt_off_t flags, void *buf,
     rt_err_t err;
     rt_size_t ret;
 
-    if (RT_DEVICE_OFLAG_WRONLY == (ctx->dev.open_flag & 0x0003))
-        return -RT_EINVAL;
-
     do {
         rt_size_t i;
 
         locked = RT_FALSE;
         ret = 0;
+
+        if (RT_DEVICE_OFLAG_WRONLY == (ctx->dev.open_flag & 0x0003)) {
+            err = -RT_EINVAL;
+            break;
+        }
 
         err = rt_mutex_take(&ctx->lok, RT_WAITING_NO);
         if (RT_EOK != err) break;
@@ -367,12 +369,12 @@ static rt_err_t bsp_spi_contex_init(struct bsp_spi_contex *ctx, rt_uint8_t chn,
  *
  ******************************************************************************/
 rt_err_t bsp_hw_spi_init(void) {
-    rt_uint8_t spi_chs[CH_NUM] = {
+    rt_uint8_t spi_chs[SPI_CH_NUM] = {
         #if CONFIG_USING_SPI0
-        CH0,
+        SPI_CH0,
         #endif
         #if CONFIG_USING_SPI1
-        CH1,
+        SPI_CH1,
         #endif
     };
     void *ldev;

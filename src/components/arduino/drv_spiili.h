@@ -7,7 +7,11 @@
 #define __DRV_SPIILI_H__
 
 /* Includes ------------------------------------------------------------------*/
-#include <SPI.h>    /* Arduino library */
+#if CONFIG_USING_GUI
+# include "include/rtgui.h"
+#else
+# define rtgui_color_t rt_uint32_t
+#endif
 
 /* Exported defines ----------------------------------------------------------*/
 #define ILI_NAME                "ILI9341"

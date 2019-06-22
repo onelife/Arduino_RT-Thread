@@ -22,12 +22,12 @@
 /* Exported types ------------------------------------------------------------*/
 enum bsp_spi_channel {
     #if CONFIG_USING_SPI0
-    CH0 = 0,
+    SPI_CH0 = 0,
     #endif
     #if CONFIG_USING_SPI1
-    CH1 = 1,
+    SPI_CH1 = 1,
     #endif
-    CH_NUM = CONFIG_USING_SPI0 + CONFIG_USING_SPI1,
+    SPI_CH_NUM = CONFIG_USING_SPI0 + CONFIG_USING_SPI1,
 };
 
 struct bsp_spi_contex {

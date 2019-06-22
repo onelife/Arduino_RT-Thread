@@ -23,6 +23,10 @@
 # define CONFIG_KERNEL_PRIORITY         (2)
 #endif
 
+#ifndef CONFIG_USART_SPEED
+# define CONFIG_USART_SPEED             (115200)
+#endif
+
 #ifndef CONFIG_USING_CONSOLE
 # define CONFIG_USING_CONSOLE           (1)
 #endif
@@ -121,6 +125,12 @@
 # endif
 #endif /* CONFIG_USING_ILI */
 
+#if (CONFIG_USING_FT6206)
+# ifndef CONFIG_FT6206_IIC_CHANNEL
+#  error "Please define CONFIG_FT6206_IIC_CHANNEL"
+# endif
+#endif /* CONFIG_USING_FT6206 */
+
 #if (CONFIG_USING_GUI)
 # ifndef CONFIG_GUI_WIDTH
 #  error "Please define CONFIG_GUI_WIDTH"
@@ -138,9 +148,18 @@
 # define CONFIG_USING_SPI1              (0)
 #endif
 
+#ifndef CONFIG_USING_IIC0
+# define CONFIG_USING_IIC0              (0)
+#endif
+
+#ifndef CONFIG_USING_IIC1
+# define CONFIG_USING_IIC1              (0)
+#endif
+
 /* Debug Options */
 // #define RT_DEBUG
 // #define RT_USING_OVERFLOW_CHECK
+// #define RT_USING_MEMTRACE
 // #define RT_DEBUG_INIT                   (1)
 // #define RT_DEBUG_MEM                    (1)
 // #define RT_DEBUG_SCHEDULER              (1)
