@@ -63,6 +63,12 @@ ADD_MSH_CMD(ltmr, list timer in system, list_timer, void, void)
 ADD_FINSH_CMD(list_dev, list device in system, list_device, void, void)
 ADD_MSH_CMD(ldev, list device in system, list_device, void, void)
 #endif
+#ifdef RT_USING_RTC
+ADD_FINSH_CMD(list_date, show date and time, list_date, void, void)
+ADD_FINSH_CMD(set_date, set date, set_date, rt_err_t, rt_uint32_t, rt_uint32_t, rt_uint32_t)
+ADD_FINSH_CMD(set_time, set time, set_time, rt_err_t, rt_uint32_t, rt_uint32_t, rt_uint32_t)
+ADD_MSH_CMD(date, access date and time, date, void, int argc, char **argv)
+#endif /* RT_USING_RTC */
 #ifdef RT_USING_DFS
 ADD_FINSH_CMD(df, show free space info of disk, df, int, const char *path)
 ADD_FINSH_CMD(list_fd, list file descriptors, list_fd, int, void)

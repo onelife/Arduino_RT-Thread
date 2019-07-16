@@ -12,16 +12,16 @@
 #ifndef __RT_DEVICE_H__
 #define __RT_DEVICE_H__
 
-#include <rtthread.h>
+#include "include/rtthread.h"
 
-#include "ipc/ringbuffer.h"
-#include "ipc/completion.h"
-#include "ipc/dataqueue.h"
-#include "ipc/workqueue.h"
-#include "ipc/waitqueue.h"
-#include "ipc/pipe.h"
-#include "ipc/poll.h"
-#include "ipc/ringblk_buf.h"
+// #include "ipc/ringbuffer.h"
+// #include "ipc/completion.h"
+// #include "ipc/dataqueue.h"
+// #include "ipc/workqueue.h"
+// #include "ipc/waitqueue.h"
+// #include "ipc/pipe.h"
+// #include "ipc/poll.h"
+// #include "ipc/ringblk_buf.h"
 
 #ifdef __cplusplus
 extern "C" {

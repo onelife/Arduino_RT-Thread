@@ -13,21 +13,22 @@
 
 #include <time.h>
 #include <string.h>
-#include <rtthread.h>
+
+#include "include/rtthread.h"
 
 #ifdef RT_USING_RTC
 
 /* Using NTP auto sync RTC time */
-#ifdef RTC_SYNC_USING_NTP
+# ifdef RTC_SYNC_USING_NTP
 /* NTP first sync delay time for network connect, unit: second */
-#ifndef RTC_NTP_FIRST_SYNC_DELAY
-#define RTC_NTP_FIRST_SYNC_DELAY                 (30)
-#endif
+#  ifndef RTC_NTP_FIRST_SYNC_DELAY
+#   define RTC_NTP_FIRST_SYNC_DELAY             (30)
+#  endif
 /* NTP sync period, unit: second */
-#ifndef RTC_NTP_SYNC_PERIOD
-#define RTC_NTP_SYNC_PERIOD                      (1L*60L*60L)
-#endif
-#endif /* RTC_SYNC_USING_NTP */
+#  ifndef RTC_NTP_SYNC_PERIOD
+#   define RTC_NTP_SYNC_PERIOD                  (1L*60L*60L)
+#  endif
+# endif /* RTC_SYNC_USING_NTP */
 
 /**
  * Set system date(time not modify).
@@ -42,7 +43,6 @@
 rt_err_t set_date(rt_uint32_t year, rt_uint32_t month, rt_uint32_t day)
 {
     time_t now;
-    struct tm *p_tm;
     struct tm tm_new;
     rt_device_t device;
     rt_err_t ret = -RT_ERROR;
@@ -53,9 +53,7 @@ rt_err_t set_date(rt_uint32_t year, rt_uint32_t month, rt_uint32_t day)
     /* lock scheduler. */
     rt_enter_critical();
     /* converts calendar time time into local time. */
-    p_tm = localtime(&now);
-    /* copy the statically located variable */
-    memcpy(&tm_new, p_tm, sizeof(struct tm));
+    localtime_r(&now, &tm_new);
     /* unlock scheduler. */
     rt_exit_critical();
 
@@ -67,7 +65,7 @@ rt_err_t set_date(rt_uint32_t year, rt_uint32_t month, rt_uint32_t day)
     /* converts the local time in time to calendar time. */
     now = mktime(&tm_new);
 
-    device = rt_device_find("rtc");
+    device = rt_device_find("RTC");
     if (device == RT_NULL)
     {
         return -RT_ERROR;
@@ -92,7 +90,6 @@ rt_err_t set_date(rt_uint32_t year, rt_uint32_t month, rt_uint32_t day)
 rt_err_t set_time(rt_uint32_t hour, rt_uint32_t minute, rt_uint32_t second)
 {
     time_t now;
-    struct tm *p_tm;
     struct tm tm_new;
     rt_device_t device;
     rt_err_t ret = -RT_ERROR;
@@ -103,9 +100,7 @@ rt_err_t set_time(rt_uint32_t hour, rt_uint32_t minute, rt_uint32_t second)
     /* lock scheduler. */
     rt_enter_critical();
     /* converts calendar time time into local time. */
-    p_tm = localtime(&now);
-    /* copy the statically located variable */
-    memcpy(&tm_new, p_tm, sizeof(struct tm));
+    localtime_r(&now, &tm_new);
     /* unlock scheduler. */
     rt_exit_critical();
 
@@ -117,7 +112,7 @@ rt_err_t set_time(rt_uint32_t hour, rt_uint32_t minute, rt_uint32_t second)
     /* converts the local time in time to calendar time. */
     now = mktime(&tm_new);
 
-    device = rt_device_find("rtc");
+    device = rt_device_find("RTC");
     if (device == RT_NULL)
     {
         return -RT_ERROR;
@@ -171,15 +166,16 @@ INIT_COMPONENT_EXPORT(rt_rtc_ntp_sync_init);
 #endif /* RTC_SYNC_USING_NTP */
 
 #ifdef RT_USING_FINSH
-#include <finsh.h>
-#include <rtdevice.h>
+#include "components/finsh/finsh.h"
 
 void list_date(void)
 {
     time_t now;
+    char buf[26];
 
     now = time(RT_NULL);
-    rt_kprintf("%s\n", ctime(&now));
+    ctime_r(&now, buf);
+    rt_kprintf("%s\n", buf);
 }
 FINSH_FUNCTION_EXPORT(list_date, show date and time.)
 
@@ -187,14 +183,17 @@ FINSH_FUNCTION_EXPORT(set_date, set date. e.g: set_date(2010,2,28))
 FINSH_FUNCTION_EXPORT(set_time, set time. e.g: set_time(23,59,59))
 
 #if defined(RT_USING_FINSH) && defined(FINSH_USING_MSH)
-static void date(uint8_t argc, char **argv)
+void date(uint8_t argc, char **argv)
 {
     if (argc == 1)
     {
         time_t now;
+        char buf[26];
+
         /* output current time */
         now = time(RT_NULL);
-        rt_kprintf("%s", ctime(&now));
+        ctime_r(&now, buf);
+        rt_kprintf("%s", buf);
     }
     else if (argc >= 7)
     {

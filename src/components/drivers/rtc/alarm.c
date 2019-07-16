@@ -9,8 +9,8 @@
  * 2013-05-17     aozima            initial alarm event & mutex in system init.
  */
 
-#include <rtthread.h>
-#include <rtdevice.h>
+#include "include/rtthread.h"
+#include "components/drivers/include/rtdevice.h"
 
 #define RT_RTC_YEARS_MAX         137
 #define RT_ALARM_DELAY             2
@@ -38,7 +38,7 @@ static rt_err_t alarm_set(struct rt_alarm *alarm)
     struct rt_rtc_wkalarm wkalarm;
     rt_err_t ret;
 
-    device = rt_device_find("rtc");
+    device = rt_device_find("RTC");
     if (device == RT_NULL)
     {
         return (RT_ERROR);
@@ -152,6 +152,7 @@ static void alarm_update(rt_uint32_t event)
     time_t timestamp;
     struct tm now;
     rt_list_t *next;
+    (void)event;
 
     rt_mutex_take(&_container.mutex, RT_WAITING_FOREVER);
     if (!rt_list_isempty(&_container.head))
@@ -249,8 +250,8 @@ static rt_bool_t is_valid_date(struct tm *date)
         return (RT_FALSE);
     }
 
-    if ((date->tm_mday < 1) || \
-            (date->tm_mday > days_of_year_month(date->tm_year, date->tm_mon)))
+    if ((date->tm_mday < 1) || ((rt_uint32_t)date->tm_mday > \
+        days_of_year_month(date->tm_year, date->tm_mon)))
     {
         return (RT_FALSE);
     }
@@ -374,6 +375,8 @@ _exit:
  */
 void rt_alarm_update(rt_device_t dev, rt_uint32_t event)
 {
+    (void)dev;
+    (void)event;
     rt_event_send(&_container.event, 1);
 }
 
@@ -572,6 +575,7 @@ rt_alarm_t rt_alarm_create(rt_alarm_callback_t callback, struct rt_alarm_setup *
 static void rt_alarmsvc_thread_init(void *param)
 {
     rt_uint32_t recv;
+    (void)param;
 
     _container.current = RT_NULL;
 

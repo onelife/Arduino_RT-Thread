@@ -202,8 +202,12 @@ static rt_err_t bsp_ft6206_init(rt_device_t dev) {
 static rt_size_t bsp_ft6206_read(rt_device_t dev, rt_off_t pos, void *buf,
     rt_size_t size) {
     struct bsp_ft_contex *ctx = (struct bsp_ft_contex *)(dev->user_data);
-    rtgui_touch_t **ptr = (rtgui_touch_t **)buf;
     rt_err_t err;
+    #if CONFIG_USING_GUI
+        rtgui_touch_t **ptr = (rtgui_touch_t **)buf;
+    #else
+        (void)buf;
+    #endif
     (void)pos;
     (void)size;
 
@@ -225,7 +229,6 @@ static rt_size_t bsp_ft6206_read(rt_device_t dev, rt_off_t pos, void *buf,
             }
             *ptr = ctx->touchs;
         #else
-            (void)ptr;
             err = RT_EOK;
         #endif
 

@@ -158,6 +158,9 @@ extern "C" {
     #if CONFIG_USING_IIC0 || CONFIG_USING_IIC1
     # include "components/arduino/drv_iic.h"
     #endif
+    #if CONFIG_USING_RTC
+    # include "components/arduino/drv_rtc.h"
+    #endif
     #if CONFIG_USING_FINSH
     # include "components/finsh/shell.h"
     #endif
@@ -207,6 +210,10 @@ void rt_driver_init(void) {
     #endif
     #if (CONFIG_USING_IIC0 || CONFIG_USING_IIC1)
         ret = bsp_hw_iic_init();
+        RT_ASSERT(RT_EOK == ret);
+    #endif
+    #if CONFIG_USING_RTC
+        ret = bsp_hw_rtc_init();
         RT_ASSERT(RT_EOK == ret);
     #endif
     (void)ret;

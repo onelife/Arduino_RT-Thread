@@ -927,8 +927,9 @@ rt_err_t bsp_hw_spiSd_init(void) {
         LOG_D("[SD] h/w init ok");
     } while (0);
 
-    if (RT_EOK != ret)
+    if (RT_EOK != ret) {
         LOG_E("[SD] h/w init failed: %d", ret);
+    }
 
     return ret;
 }

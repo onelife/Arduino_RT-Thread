@@ -514,8 +514,9 @@ rt_err_t bsp_hw_spiIli_init(void) {
         LOG_D("[ILI] h/w init ok");
     } while (0);
 
-    if (RT_EOK != ret)
+    if (RT_EOK != ret) {
         LOG_E("[ILI] h/w init failed: %d", ret);
+    }
 
     return ret;
 }

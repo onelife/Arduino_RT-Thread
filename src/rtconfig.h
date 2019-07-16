@@ -12,8 +12,12 @@
 #define CONFIG_TICK_PER_SECOND          (1000)  /* Arduino */
 
 #ifndef CONFIG_HEAP_SIZE
-# define CONFIG_HEAP_SIZE               (20 * 1024)
-#endif
+# ifdef ARDUINO_ARCH_SAM
+#  define CONFIG_HEAP_SIZE              (40 * 1024)
+# else
+#  define CONFIG_HEAP_SIZE              (20 * 1024)
+# endif
+#endif /* CONFIG_HEAP_SIZE */
 
 #ifndef CONFIG_PRIORITY_MAX
 # define CONFIG_PRIORITY_MAX            (3)
@@ -21,6 +25,10 @@
 
 #ifndef CONFIG_KERNEL_PRIORITY
 # define CONFIG_KERNEL_PRIORITY         (2)
+#endif
+
+#ifndef CONFIG_USING_RTC
+# define CONFIG_USING_RTC               (0)
 #endif
 
 #ifndef CONFIG_USART_SPEED
@@ -154,6 +162,11 @@
 
 #ifndef CONFIG_USING_IIC1
 # define CONFIG_USING_IIC1              (0)
+#endif
+
+#if CONFIG_USING_RTC
+# define RT_USING_RTC
+# define RT_USING_ALARM
 #endif
 
 /* Debug Options */

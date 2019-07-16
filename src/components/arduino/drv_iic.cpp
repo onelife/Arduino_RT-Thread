@@ -226,7 +226,6 @@ static rt_err_t bsp_iic_contex_init(struct bsp_iic_contex *ctx, rt_uint8_t chn,
 
     do {
         ctx->chn = chn;
-        // ctx->start = RT_FALSE;
         ctx->ldev = ldev;
 
         /* init lock */
@@ -299,8 +298,9 @@ rt_err_t bsp_hw_iic_init(void) {
         LOG_D("[IIC%d] h/w init ok!", chn);
     }
 
-    if (RT_EOK != ret)
+    if (RT_EOK != ret) {
         LOG_E("[IIC%d E] h/w init failed!", chn);
+    }
 
     return ret;
 }

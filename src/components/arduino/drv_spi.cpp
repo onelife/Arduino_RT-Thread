@@ -410,8 +410,9 @@ rt_err_t bsp_hw_spi_init(void) {
         LOG_D("[SPI%d] h/w init ok!", chn);
     }
 
-    if (RT_EOK != ret)
+    if (RT_EOK != ret) {
         LOG_E("[SPI%d E] h/w init failed!", chn);
+    }
 
     return ret;
 }

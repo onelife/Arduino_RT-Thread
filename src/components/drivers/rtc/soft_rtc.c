@@ -10,9 +10,9 @@
 
 #include <time.h>
 #include <string.h>
-#include <rtthread.h>
 
-#include <drivers/rtc.h>
+#include "include/rtthread.h"
+// #include <drivers/rtc.h>
 
 #ifdef RT_USING_SOFT_RTC
 
