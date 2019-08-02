@@ -77,6 +77,7 @@ extern "C" {
 /* Private function prototypes -----------------------------------------------*/
 #if CONFIG_USING_GUI
 static void ili_set_pixel(rtgui_color_t *c, int x, int y);
+static void ili_get_pixel(rtgui_color_t *c, int x, int y);
 static void ili_draw_hline(rtgui_color_t *c, int x1, int x2, int y);
 static void ili_draw_vline(rtgui_color_t *c, int x , int y1, int y2);
 static void ili_draw_raw_hline(rt_uint8_t *pixels, int x1, int x2, int y);
@@ -127,7 +128,7 @@ static const struct rt_device_graphic_info disp_info = {
 
 static struct rtgui_graphic_driver_ops disp_ops = {
     .set_pixel      = ili_set_pixel,
-    .get_pixel      = RT_NULL,
+    .get_pixel      = ili_get_pixel,
     .draw_hline     = ili_draw_hline,
     .draw_vline     = ili_draw_vline,
     .draw_raw_hline = ili_draw_raw_hline,
@@ -227,12 +228,15 @@ static rt_err_t ili_write_data(rt_device_t ldev, rt_uint8_t *data,
          ret = ili_write_cmd(ldev, ILI_CMD_RAMWR, RT_NULL, RT_NULL, 0);
          if (RT_EOK !=ret) break;
 
-        /* send param and receive resp */
-        /*  build inst
+        /* send param and receive resp
+            - color in RGB565 (RRRRRGGG GGGBBBBB) format
+            - send MSB first (RRRRRGGG)
+         */
+        /* build inst
             - inst len: 0
             - inst: none
             - tx buf addr: offset align with RT_ALIGN_SIZE
-        */
+         */
         buf_ins[0] = 0;
         #pragma GCC diagnostic push
         #pragma GCC diagnostic ignored "-Wstrict-aliasing"
@@ -245,6 +249,48 @@ static rt_err_t ili_write_data(rt_device_t ldev, rt_uint8_t *data,
             ret = -RT_EIO;
             break;
         }
+    } while (0);
+
+    return ret;
+}
+
+static rt_err_t ili_read_data(rt_device_t ldev, rt_uint8_t *data,
+    rt_uint32_t len) {
+    rt_uint8_t buf_ins[RT_ALIGN(5, RT_ALIGN_SIZE)];
+    rt_err_t ret;
+
+    ret = RT_EOK;
+    LOG_D("[ILI] read data [%d]", len);
+
+    do {
+         rt_size_t ret_len;
+
+         ret = ili_write_cmd(ldev, ILI_CMD_RAMRD, RT_NULL, RT_NULL, 0);
+         if (RT_EOK !=ret) break;
+
+        /* read data
+            - color in RGB666 format
+            - dummy read 1 byte
+            - receive RRRRRR000, GGGGGG000, BBBBBB000
+         */
+        /* build inst
+            - inst len: 0
+            - inst: none
+            - tx buf addr: offset align with RT_ALIGN_SIZE
+         */
+        buf_ins[0] = 0;
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wstrict-aliasing"
+        *(rt_uint8_t **)(&buf_ins[RT_ALIGN(1, RT_ALIGN_SIZE)]) = data;
+        #pragma GCC diagnostic pop
+
+        ret_len = rt_device_read(ldev, 0, buf_ins, len);
+        if (len != ret_len) {
+            LOG_E("[ILI E] read data failed! [%d]", ret_len);
+            ret = -RT_EIO;
+            break;
+        }
+        LOG_HEX("read", 16, data, len);
     } while (0);
 
     return ret;
@@ -281,7 +327,7 @@ static void ili_set_window(rt_uint16_t x1, rt_uint16_t x2, rt_uint16_t y1,
     LOG_D("[ILI] win (%d,%d) (%d,%d)", x1, y1, x2, y2);
 
     /* set x */
-    data[0] = 5;
+    data[0] = 4;
     data[1] = (rt_uint8_t)((x1 & 0xff00) >> 8);
     data[2] = (rt_uint8_t)(x1 & 0x00ff);
     data[3] = (rt_uint8_t)((x2 & 0xff00) >> 8);
@@ -308,7 +354,23 @@ SCOPE void ili_set_pixel(rtgui_color_t *c, int x, int y) {
     ili_write_data(ILI_CTX()->ldev, (rt_uint8_t *)c, 2);
     ILI_STOP();
     rt_device_close(ILI_CTX()->ldev);
-    LOG_D("[ILI] set pixel %04d (%d, %d)", *c, x, y);
+    LOG_D("[ILI] set pixel %08x (%d, %d)", *c, x, y);
+}
+
+SCOPE void ili_get_pixel(rtgui_color_t *c, int x, int y) {
+    rt_uint16_t x1 = x & 0x0000ffff;
+    rt_uint16_t y1 = y & 0x0000ffff;
+    rt_uint8_t buf[4];
+
+    if (RT_EOK != rt_device_open(ILI_CTX()->ldev, RT_DEVICE_OFLAG_RDWR))
+        return;
+    ILI_START();
+    ili_set_window(x1, x1, y1, y1);
+    ili_read_data(ILI_CTX()->ldev, buf, 4);
+    ILI_STOP();
+    rt_device_close(ILI_CTX()->ldev);
+    *c = (buf[1] << 16) | (buf[2] << 8) | buf[3];
+    LOG_D("[ILI] get pixel %08x (%d, %d)", *c, x, y);
 }
 
 SCOPE void ili_draw_raw_hline(rt_uint8_t *pixels, int x1, int x2, int y) {

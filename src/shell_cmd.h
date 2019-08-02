@@ -102,6 +102,12 @@ ADD_MSH_CMD(lsd, show SD info, list_sd, rt_err_t, void)
 ADD_MSH_CMD(lsym, list symbols info, list_symbols, int, void)
 ADD_MSH_CMD(lmod, list modules in system, list_module, int, void)
 #endif
+#if CONFIG_USING_GUI
+# ifdef RT_USING_DFS
+ADD_FINSH_CMD(screenshot, capture screen, screenshot, void, const char *filename)
+ADD_MSH_CMD(prtscn, capture screen, prtscn, int, int argc, char **argv)
+# endif
+#endif
 
 
 /* Please add your commands with the following format:

@@ -13,7 +13,7 @@
 /* Exported defines ----------------------------------------------------------*/
 #define SPI_DEFAULT_SPEED           (250000)
 #define SPI_MAX_SPEED               (24000000)
-#define SPI_DEFAULT_RETRY           (3)
+#define SPI_DEFAULT_RETRY           (10)
 #define SPI_DEFAULT_LIMIT           (512)
 #define SPI_FLAG_MORE               (rt_uint32_t)(0x01 << 16)
 #define SPI_FLAG_READ_TOKEN(tk)     (rt_uint32_t)((tk & 0xff) << 8)
