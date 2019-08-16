@@ -6,6 +6,45 @@
 #ifndef __RTCONFIG_H__
 #define __RTCONFIG_H__
 
+
+/* Hardware Options */
+/* Adafruit 2.8" TFT Touch Shield v2 (Capacitive) */
+#ifdef CONFIG_USING_ADAFRUIT_TFT_CAPACITIVE
+# ifdef ARDUINO_SAM_DUE
+#  define CONFIG_USING_SPI0             (1)
+#  define CONFIG_USING_IIC1             (1)
+
+#  define CONFIG_USING_MODULE           (1)
+#  define CONFIG_USING_SPISD            (1)
+#  define CONFIG_SD_CS_PIN              (4)
+#  define CONFIG_SD_SPI_CHANNEL         0
+
+#  define CONFIG_USING_ILI              (1)
+#  define CONFIG_ILI_CS_PIN             (10)
+#  define CONFIG_ILI_DC_PIN             (9)
+#  define CONFIG_ILI_SPI_CHANNEL        0
+
+#  define CONFIG_USING_FT6206           (1)
+#  define CONFIG_FT6206_INT_PIN         7
+#  define CONFIG_FT6206_IIC_CHANNEL     1
+
+#  define CONFIG_USING_GUI              (1)
+#  define CONFIG_GUI_WIDTH              (240)
+#  define CONFIG_GUI_HIGH               (320)
+# else
+#  error "Not implement yet!"
+# endif /* ARDUINO_SAM_DUE */
+#endif /* CONFIG_USING_ADAFRUIT_TFT_CAPACITIVE */
+
+#ifdef ARDUINO_SAMD_MKRZERO
+# define CONFIG_USING_SPI1              (1)
+
+# define CONFIG_USING_SPISD             (1)
+# define CONFIG_SD_CS_PIN               (SDCARD_SS_PIN)
+# define CONFIG_SD_SPI_CHANNEL          1   /* (1) is wrong -_-! */
+#endif /* ARDUINO_SAMD_MKRZERO */
+
+
 /* Porting Options */
 #define CONFIG_ARDUINO
 
@@ -56,7 +95,7 @@
 #endif
 
 #ifndef CONFIG_USING_SPISD
-# define CONFIG_USING_SPISD             (ARDUINO_ARCH_SAMD)
+# define CONFIG_USING_SPISD             (0)
 #endif
 
 #ifndef CONFIG_USING_ILI
@@ -95,30 +134,15 @@
 #endif /* CONFIG_USING_MODULE */
 
 #if (CONFIG_USING_SPISD)
-# ifdef ARDUINO_SAMD_MKRZERO
-#  define CONFIG_USING_SPI1             (1)
-# endif /* ARDUINO_SAMD_MKRZERO */
-
 # ifndef CONFIG_SD_CS_PIN
-#  ifdef ARDUINO_SAMD_MKRZERO
-#   define CONFIG_SD_CS_PIN             (SDCARD_SS_PIN)
-#  else
-#   error "Please define CONFIG_SD_CS_PIN!"
-#  endif /* ARDUINO_SAMD_MKRZERO */
-# endif /* CONFIG_SD_CS_PIN */
-
-# ifndef CONFIG_SD_SPI_CHANNEL
-#  ifdef ARDUINO_SAMD_MKRZERO
-#   define CONFIG_SD_SPI_CHANNEL        1   /* (1) is wrong -_-! */
-#  endif /* ARDUINO_SAMD_MKRZERO */
-# endif /* CONFIG_SD_SPI_CHANNEL */
-
+#  error "Please define CONFIG_SD_CS_PIN!"
+# endif
 # if (!defined(CONFIG_USING_SPI0) && !defined(CONFIG_USING_SPI1))
 #  error "Please define CONFIG_USING_SPIx!"
-# endif /* (!defined(CONFIG_USING_SPI0) && !defined(CONFIG_USING_SPI1)) */
+# endif
 # ifndef CONFIG_SD_SPI_CHANNEL
 #  error "Please define CONFIG_SD_SPI_CHANNEL!"
-# endif /* CONFIG_SD_SPI_CHANNEL */
+# endif
 #endif /* CONFIG_USING_SPISD */
 
 #if (CONFIG_USING_ILI)
@@ -169,6 +193,7 @@
 # define RT_USING_ALARM
 #endif
 
+
 /* Debug Options */
 // #define RT_DEBUG
 // #define RT_USING_OVERFLOW_CHECK
@@ -180,11 +205,13 @@
 // #define RT_DEBUG_TIMER                  (1)
 // #define RT_DEBUG_THREAD                 (1)
 
+
 /* System Options */
 #define RT_NAME_MAX                     (16)
 #define RT_ALIGN_SIZE                   (4)
 #define RT_THREAD_PRIORITY_MAX          (32)
 #define RT_TICK_PER_SECOND              (100)
+
 
 /* Arduino Thread Options */
 #ifndef CONFIG_ARDUINO_STACK_SIZE
@@ -197,10 +224,12 @@
 # define CONFIG_ARDUINO_TICK            (16)
 #endif
 
+
 /* Timer Options */
 // #define RT_USING_TIMER_SOFT
 // #define RT_TIMER_THREAD_PRIO            (4)
 // #define RT_TIMER_THREAD_STACK_SIZE      (512)
+
 
 /* Utility Options */
 #define RT_USING_DEVICE                 /* Required by IPC, DRV */
@@ -213,17 +242,20 @@
 // #define RT_USING_HOOK
 // #define RT_USING_IDLE_HOOK
 
+
 /* Memory Management Options */
 #define RT_USING_MEMPOOL                /* Required by SIG, GUI */
 // #define RT_USING_MEMHEAP
 #define RT_USING_HEAP
 #define RT_USING_SMALL_MEM
 
+
 /* Console Options */
 #if (CONFIG_USING_CONSOLE)
 # define RT_USING_CONSOLE
 # define RT_CONSOLEBUF_SIZE             (128)
 #endif /* CONFIG_USING_CONSOLE */
+
 
 /* FinSH Options */
 #if (CONFIG_USING_FINSH)
@@ -236,8 +268,8 @@
 #define FINSH_USING_HISTORY
 #define FINSH_THREAD_PRIORITY           (20)
 #define FINSH_THREAD_STACK_SIZE         (4 * 1024)
-// # define FINSH_USING_SYMTAB             /* Not supported as no access to linker script */
 #endif /* CONFIG_USING_FINSH */
+
 
 /* DFS Options */
 #if (CONFIG_USING_SPISD)
@@ -256,7 +288,11 @@
 # endif /* defined(RT_DFS_ELM_USE_EXFAT) || (RT_DFS_ELM_CODE_PAGE >= 900) */
 #endif /* CONFIG_USING_SPISD */
 
+
 /* Unsupported Options */
+#ifdef FINSH_USING_SYMTAB
+# undef FINSH_USING_SYMTAB              /* Reason: no access to linker script */
+#endif
 #ifdef RT_USING_COMPONENTS_INIT
 # undef RT_USING_COMPONENTS_INIT        /* Reason: no access to linker script */
 #endif
