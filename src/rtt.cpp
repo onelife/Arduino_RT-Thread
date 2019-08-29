@@ -188,6 +188,9 @@ extern "C" {
     #if CONFIG_USING_ILI
     # include "components/arduino/drv_spiili.h"
     #endif
+    #if CONFIG_USING_SSD1331
+    # include "components/arduino/drv_spi_ssd1331.h"
+    #endif
     #if CONFIG_USING_FT6206
     # include "components/arduino/drv_iic_ft6206.h"
     #endif
@@ -229,6 +232,10 @@ void rt_high_driver_init(void) {
     #endif
     #if CONFIG_USING_ILI
         ret = bsp_hw_spiIli_init();
+        RT_ASSERT(RT_EOK == ret);
+    #endif
+    #if CONFIG_USING_SSD1331
+        ret = bsp_hw_ssd1331_init();
         RT_ASSERT(RT_EOK == ret);
     #endif
     #if CONFIG_USING_FT6206
@@ -344,7 +351,7 @@ void loop(void) { }
 void RT_Thread::begin(void) {
     #if defined(ARDUINO_SAM_DUE)
         NVIC_SetPriority(UART_IRQn, CONFIG_PRIORITY_MAX);
-    #elif defined(ARDUINO_SAMD_MKRZERO)
+    #elif defined(ARDUINO_SAMD_MKRZERO) || defined(ARDUINO_SAMD_ZERO)
         NVIC_SetPriority(USB_IRQn, CONFIG_PRIORITY_MAX);
     #else
         #warning "Unsupported board!"

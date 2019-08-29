@@ -12,7 +12,11 @@
 
 /* Exported defines ----------------------------------------------------------*/
 #define SPI_DEFAULT_SPEED           (250000)
-#define SPI_MAX_SPEED               (24000000)
+#ifdef ARDUINO_ARCH_SAM
+# define SPI_MAX_SPEED              (24000000)
+#else
+# define SPI_MAX_SPEED              (12000000)
+#endif
 #define SPI_DEFAULT_RETRY           (10)
 #define SPI_DEFAULT_LIMIT           (512)
 #define SPI_FLAG_MORE               (rt_uint32_t)(0x01 << 16)

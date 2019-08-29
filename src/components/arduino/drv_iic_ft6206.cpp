@@ -157,7 +157,6 @@ static rt_err_t ft_read_data(struct bsp_ft_contex *ctx) {
 static rt_err_t bsp_ft6206_init(rt_device_t dev) {
     struct bsp_ft_contex *ctx = (struct bsp_ft_contex *)(dev->user_data);
     rt_err_t ret;
-    (void)dev;
 
     /* open lower level device */
     ret = rt_device_open(ctx->ldev, RT_DEVICE_OFLAG_RDWR);
@@ -212,11 +211,6 @@ static rt_size_t bsp_ft6206_read(rt_device_t dev, rt_off_t pos, void *buf,
     (void)size;
 
     do {
-        if (RT_DEVICE_OFLAG_WRONLY == (ctx->dev.open_flag & 0x0003)) {
-            err = -RT_EINVAL;
-            break;
-        }
-
         err = rt_device_open(ctx->ldev, RT_DEVICE_OFLAG_RDWR);
         if (RT_EOK != err) break;
 
@@ -266,7 +260,7 @@ static rt_err_t bsp_ft6206_control(rt_device_t dev, rt_int32_t cmd, void *args) 
  *
  * @param[in] struct bsp_ft_contex *ctx - Pointer to FT6206 contex
  *
- * @param[in] const char *name - Pointer to FT6206 name
+ * @param[in] const char *name - Pointer to FT6206 device name
  *
  * @param[in] void *ldev - Pointer to lower level device
  *
@@ -330,7 +324,7 @@ rt_err_t bsp_hw_ft6206_init(void) {
     } while (0);
 
     if (RT_EOK != ret) {
-        LOG_E("[FT] h/w init failed: %d", ret);
+        LOG_E("[FT E] h/w init failed: %d", ret);
     }
 
     return ret;

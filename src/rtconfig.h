@@ -25,7 +25,7 @@
 #  define CONFIG_ILI_SPI_CHANNEL        0
 
 #  define CONFIG_USING_FT6206           (1)
-#  define CONFIG_FT6206_INT_PIN         7
+#  define CONFIG_FT6206_INT_PIN         (7)
 #  define CONFIG_FT6206_IIC_CHANNEL     1
 
 #  define CONFIG_USING_GUI              (1)
@@ -36,6 +36,30 @@
 # endif /* ARDUINO_SAM_DUE */
 #endif /* CONFIG_USING_ADAFRUIT_TFT_CAPACITIVE */
 
+/* Pocket Arcade */
+#ifdef CONFIG_USING_TINYSCREEN
+# define CONFIG_SERIAL_DEVICE           (SerialUSB)
+# define CONFIG_USING_SPI0              (1)
+# define CONFIG_USING_SPI1              (1)
+
+# define CONFIG_USING_MODULE            (1)
+# define CONFIG_USING_SPISD             (1)
+# define CONFIG_SD_CS_PIN               (SS)
+# define CONFIG_SD_SPI_CHANNEL          0
+
+# define CONFIG_USING_SSD1331           (1)
+# define CONFIG_SSD_CS_PIN              (38)
+# define CONFIG_SSD_DC_PIN              (22)
+# define CONFIG_SSD_RST_PIN             (26)
+# define CONFIG_SSD_PWR_PIN             (27)
+# define CONFIG_SSD_SPI_CHANNEL         1
+
+# define CONFIG_USING_GUI               (1)
+# define CONFIG_GUI_WIDTH               (96)
+# define CONFIG_GUI_HIGH                (64)
+#endif /* CONFIG_USING_TINYSCREEN */
+
+/* Arduino MKR Zero */
 #ifdef ARDUINO_SAMD_MKRZERO
 # define CONFIG_USING_SPI1              (1)
 
@@ -94,12 +118,24 @@
 # define CONFIG_USING_MODULE            (0)
 #endif
 
+#ifndef CONFIG_USING_GUI
+# define CONFIG_USING_GUI               (0)
+#endif
+
 #ifndef CONFIG_USING_SPISD
 # define CONFIG_USING_SPISD             (0)
 #endif
 
 #ifndef CONFIG_USING_ILI
 # define CONFIG_USING_ILI               (0)
+#endif
+
+#ifndef CONFIG_USING_SSD1331
+# define CONFIG_USING_SSD1331           (0)
+#endif
+
+#ifndef CONFIG_USING_FT6206
+# define CONFIG_USING_FT6206            (0)
 #endif
 
 #if (CONFIG_USING_CONSOLE)

@@ -66,7 +66,6 @@ extern "C" {
 #define _CH_TO_STR(ch)              _NUM_TO_STR(ch)
 #define ILI_LOWER_DEVICE_NAME       "SPI" _CH_TO_STR(CONFIG_ILI_SPI_CHANNEL)
 #define ILI_CTX()                   (&ili_ctx)
-#define ILI_LCTX()                  ((struct bsp_spi_contex *)(ILI_CTX()->ldev->user_data))
 #define ILI_DELAY(ms)               delay(ms)   /* Arduino function*/
 #if CONFIG_USING_GUI
 # define SCOPE                      static
@@ -354,7 +353,7 @@ SCOPE void ili_set_pixel(rtgui_color_t *c, int x, int y) {
     ili_write_data(ILI_CTX()->ldev, (rt_uint8_t *)c, 2);
     ILI_STOP();
     rt_device_close(ILI_CTX()->ldev);
-    LOG_D("[ILI] set pixel %08x (%d, %d)", *c, x, y);
+    LOG_D("[ILI] set pixel %04x (%d, %d)", *c, x, y);
 }
 
 SCOPE void ili_get_pixel(rtgui_color_t *c, int x, int y) {
@@ -472,16 +471,15 @@ static rt_err_t bsp_spiIli_control(rt_device_t dev, rt_int32_t cmd,
 
     switch (cmd) {
     case RTGRAPHIC_CTRL_RECT_UPDATE:
-        break;
     case RTGRAPHIC_CTRL_POWERON:
-        break;
     case RTGRAPHIC_CTRL_POWEROFF:
         break;
+
     case RTGRAPHIC_CTRL_GET_INFO:
-    #if CONFIG_USING_GUI
+        #if CONFIG_USING_GUI
         rt_memcpy(args, ctx->disp_info, sizeof(struct rt_device_graphic_info));
         ret = RT_EOK;
-    #endif
+        #endif
         break;
 
     case RTGRAPHIC_CTRL_SET_MODE:
@@ -490,8 +488,8 @@ static rt_err_t bsp_spiIli_control(rt_device_t dev, rt_int32_t cmd,
 
     case RT_DEVICE_CTRL_CURSOR_SET_POSITION:
     case RT_DEVICE_CTRL_CURSOR_SET_TYPE:
-    #ifdef RTGUI_USING_HW_CURSOR
-    #endif
+        #ifdef RTGUI_USING_HW_CURSOR
+        #endif
         break;
 
     default:
