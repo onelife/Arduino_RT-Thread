@@ -182,6 +182,9 @@ extern "C" {
     #ifdef RT_USING_MODULE
     # include "components/libc/libdl/dlmodule.h"
     #endif
+    #if CONFIG_USING_BUTTON
+    # include "components/arduino/drv_button.h"
+    #endif
     #if CONFIG_USING_SPISD
     # include "components/arduino/drv_spisd.h"
     #endif
@@ -226,6 +229,10 @@ void rt_driver_init(void) {
 void rt_high_driver_init(void) {
     rt_err_t ret;
 
+    #if CONFIG_USING_BUTTON
+        ret = bsp_hw_button_init();
+        RT_ASSERT(RT_EOK == ret);
+    #endif
     #if CONFIG_USING_SPISD
         ret = bsp_hw_spiSd_init();
         RT_ASSERT(RT_EOK == ret);

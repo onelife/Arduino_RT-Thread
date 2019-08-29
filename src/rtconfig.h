@@ -54,6 +54,11 @@
 # define CONFIG_SSD_PWR_PIN             (27)
 # define CONFIG_SSD_SPI_CHANNEL         1
 
+# define CONFIG_USING_BUTTON            (6)
+/* UP, DOWN, LEFT, RIGHT, A, B */
+# define CONFIG_BUTTON_PIN              { 42, 19, 25, 15, 45, 44 }
+# define CONFIG_BUTTON_CODE             { 273, 274, 276, 275, 97, 98 }
+
 # define CONFIG_USING_GUI               (1)
 # define CONFIG_GUI_WIDTH               (96)
 # define CONFIG_GUI_HIGH                (64)
@@ -120,6 +125,10 @@
 
 #ifndef CONFIG_USING_GUI
 # define CONFIG_USING_GUI               (0)
+#endif
+
+#ifndef CONFIG_USING_BUTTON
+# define CONFIG_USING_BUTTON            (0)
 #endif
 
 #ifndef CONFIG_USING_SPISD
@@ -251,7 +260,7 @@
 
 /* Arduino Thread Options */
 #ifndef CONFIG_ARDUINO_STACK_SIZE
-# define CONFIG_ARDUINO_STACK_SIZE      (4 * 1024)
+# define CONFIG_ARDUINO_STACK_SIZE      (2 * 1024)
 #endif
 #ifndef CONFIG_ARDUINO_PRIORITY
 # define CONFIG_ARDUINO_PRIORITY        (RT_THREAD_PRIORITY_MAX >> 1)
