@@ -359,10 +359,9 @@ static rt_err_t bsp_ssd1331_init(rt_device_t dev) {
 
 static rt_err_t bsp_ssd1331_control(rt_device_t dev, rt_int32_t cmd,
     void *args) {
+    struct bsp_ssd_contex *ctx = SSD_CTX();
     rt_err_t ret = -RT_ERROR;
-    #if CONFIG_USING_GUI
-        struct bsp_ssd_contex *ctx = SSD_CTX();
-    #else
+    #if !CONFIG_USING_GUI
         (void)args;
     #endif
     (void)dev;
