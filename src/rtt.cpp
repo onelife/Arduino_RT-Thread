@@ -191,6 +191,9 @@ extern "C" {
     #if CONFIG_USING_ILI
     # include "components/arduino/drv_spiili.h"
     #endif
+    #if CONFIG_USING_SSD1306
+    # include "components/arduino/drv_spi_ssd1306.h"
+    #endif
     #if CONFIG_USING_SSD1331
     # include "components/arduino/drv_spi_ssd1331.h"
     #endif
@@ -239,6 +242,10 @@ void rt_high_driver_init(void) {
     #endif
     #if CONFIG_USING_ILI
         ret = bsp_hw_spiIli_init();
+        RT_ASSERT(RT_EOK == ret);
+    #endif
+    #if CONFIG_USING_SSD1306
+        ret = bsp_hw_ssd1306_init();
         RT_ASSERT(RT_EOK == ret);
     #endif
     #if CONFIG_USING_SSD1331

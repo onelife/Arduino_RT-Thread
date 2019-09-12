@@ -10,7 +10,7 @@
 
 // #define CONFIG_USING_ADAFRUIT_TFT_CAPACITIVE
 // #define CONFIG_USING_TINYSCREEN
-
+// #define CONFIG_USING_SSD1306_SPI4
 
 /* Hardware Config */
 
@@ -77,6 +77,21 @@
 # define CONFIG_SD_CS_PIN               (SDCARD_SS_PIN)
 # define CONFIG_SD_SPI_CHANNEL          1       /* (1) is wrong -_-! */
 #endif /* ARDUINO_SAMD_MKRZERO */
+
+/* SSD1306 */
+#ifdef CONFIG_USING_SSD1306_SPI4
+# define CONFIG_USING_SPI0              (1)
+
+# define CONFIG_USING_SSD1306           (1)
+# define CONFIG_SSD_CS_PIN              (3)
+# define CONFIG_SSD_DC_PIN              (4)
+# define CONFIG_SSD_RST_PIN             (5)
+# define CONFIG_SSD_SPI_CHANNEL         0
+
+# define CONFIG_USING_GUI               (1)
+# define CONFIG_GUI_WIDTH               (128)
+# define CONFIG_GUI_HIGH                (64)
+#endif /* CONFIG_USING_SSD1306_SPI4 */
 
 
 /* Arduino Config */

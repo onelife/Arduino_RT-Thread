@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file    drv_spi_ssd1331.cpp
- * @brief   Arduino RT-Thread library SSD1331 device driver
+ * @file    drv_spi_ssd1306.cpp
+ * @brief   Arduino RT-Thread library SSD1306 device driver
  * @author  onelife <onelife.real[at]gmail.com>
  ******************************************************************************/
 /* Includes ------------------------------------------------------------------*/
@@ -8,7 +8,7 @@ extern "C" {
 
 #include "include/rtthread.h"
 
-#if defined(CONFIG_ARDUINO) && CONFIG_USING_SSD1331
+#if defined(CONFIG_ARDUINO) && CONFIG_USING_SSD1306
 }
 
 #include <Arduino.h>
@@ -21,7 +21,7 @@ extern "C" {
 extern "C" {
 
 #include "drv_spi.h"
-#include "drv_spi_ssd1331.h"
+#include "drv_spi_ssd1306.h"
 
 /***************************************************************************//**
  * @addtogroup Arduino
@@ -54,37 +54,40 @@ extern "C" {
     pinMode(CONFIG_SSD_CS_PIN, OUTPUT); \
     pinMode(CONFIG_SSD_DC_PIN, OUTPUT); \
     pinMode(CONFIG_SSD_RST_PIN, OUTPUT); \
-    pinMode(CONFIG_SSD_PWR_PIN, OUTPUT); \
     digitalWrite(CONFIG_SSD_CS_PIN, HIGH); \
     digitalWrite(CONFIG_SSD_DC_PIN, HIGH); \
     digitalWrite(CONFIG_SSD_RST_PIN, HIGH); \
-    digitalWrite(CONFIG_SSD_PWR_PIN, LOW); \
 }
 #define SSD_RESET()                 digitalWrite(CONFIG_SSD_RST_PIN, LOW); \
                                     delay(10); \
                                     digitalWrite(CONFIG_SSD_RST_PIN, HIGH); \
                                     delay(1)
-#define SSD_LIGHT_ON()              digitalWrite(CONFIG_SSD_PWR_PIN, HIGH)
-#define SSD_LIGHT_OFF()             digitalWrite(CONFIG_SSD_PWR_PIN, LOW)
 #define SSD_START()                 digitalWrite(CONFIG_SSD_CS_PIN, LOW); \
-                                    LOG_D("[SSD] start")
+                                    LOG_D("[1306] cs clear")
 #define SSD_STOP()                  digitalWrite(CONFIG_SSD_CS_PIN, HIGH); \
-                                    LOG_D("[SSD] stop")
-#define SSD_CMD_START()             digitalWrite(CONFIG_SSD_DC_PIN, LOW)
-#define SSD_CMD_STOP()              digitalWrite(CONFIG_SSD_DC_PIN, HIGH)
+                                    LOG_D("[1306] cs set")
+#define SSD_CMD_START()             digitalWrite(CONFIG_SSD_DC_PIN, LOW); \
+                                    LOG_D("[1306] dc clear")
+#define SSD_CMD_STOP()              digitalWrite(CONFIG_SSD_DC_PIN, HIGH); \
+                                    LOG_D("[1306] dc set")
 #define _NUM_TO_STR(n)              #n
 #define _CH_TO_STR(ch)              _NUM_TO_STR(ch)
 #define SSD_LOWER_DEVICE_NAME       "SPI" _CH_TO_STR(CONFIG_SSD_SPI_CHANNEL)
 #define SSD_CTX()                   (&ssd_ctx)
 #if CONFIG_USING_GUI
+# define SSD_BUF()                  (ssd_ctx.disp_info->framebuffer)
+# define SSD_WIDTH()                (ssd_ctx.disp_info->width)
 # define SCOPE                      static
 #else
+# define SSD_WIDTH()                (CONFIG_GUI_WIDTH)
+# define SSD_BUF()                  (_framebuffer)
 # define SCOPE
 #endif
 
 /* Private function prototypes -----------------------------------------------*/
 #if CONFIG_USING_GUI
 static void ssd_set_pixel(rtgui_color_t *c, int x, int y);
+static void ssd_get_pixel(rtgui_color_t *c, int x, int y);
 static void ssd_draw_hline(rtgui_color_t *c, int x1, int x2, int y);
 static void ssd_draw_vline(rtgui_color_t *c, int x , int y1, int y2);
 static void ssd_draw_raw_hline(rt_uint8_t *pixels, int x1, int x2, int y);
@@ -92,42 +95,40 @@ static void ssd_draw_raw_hline(rt_uint8_t *pixels, int x1, int x2, int y);
 
 /* Private constants ---------------------------------------------------------*/
 static const rt_uint8_t init_code[] = {
-    SSD1331_CMD_DISPLAYOFF,
-    SSD1331_CMD_REMAP,          0x60,
-    SSD1331_CMD_STARTLINE,      0x00,
-    SSD1331_CMD_DISPLAYOFFSET,  0x00,
-    SSD1331_CMD_NORMALDISPLAY,
-    SSD1331_CMD_MULTIPLEX,      0x3F,   // 1/64 duty
-    SSD1331_CMD_MASTERCONFIG,   0x8E,
-    SSD1331_CMD_POWERMODE,      0x0B,
-    SSD1331_CMD_PRECHARGE,      0x31,
-    SSD1331_CMD_CLOCKDIV,       0xF0,   // Freq, CLK Div Ratio
-    SSD1331_CMD_PRECHARGEA,     0x64,
-    SSD1331_CMD_PRECHARGEB,     0x78,
-    SSD1331_CMD_PRECHARGEC,     0x64,
-    SSD1331_CMD_PRECHARGELEVEL, 0x3A,
-    SSD1331_CMD_VCOMH,          0x3E,
-    SSD1331_CMD_CONTRASTA,      0x91,
-    SSD1331_CMD_CONTRASTB,      0x50,
-    SSD1331_CMD_CONTRASTC,      0x7D,
-    SSD1331_CMD_MASTERCURRENT,  0x08,
-    SSD1331_CMD_CLEAR,          0x00, 0x00, 95, 63,
-    SSD1331_CMD_DISPLAYON,
+    SSD1306_CMD_DISPLAYOFF,
+    SSD1306_CMD_CLOCKDIV,           0x80,   // Freq, CLK Div Ratio
+    SSD1306_CMD_CHARGEPUMP,         0x14,   // Enable
+    SSD1306_CMD_PRECHARGE,          0xf1,   // Phase1: 1, Phase2: 15
+    SSD1306_CMD_VCOMDETECT,         0x30,   // 0.83x Vcc
+    SSD1306_CMD_CONTRAST,           0xcf,
+    SSD1306_CMD_ADDRMODE,           0x00,   // Page addr mode
+    SSD1306_CMD_SEGREMAP | 0x01,            // Col127 => Seg0
+    SSD1306_CMD_MULTIPLEX,          CONFIG_GUI_HIGH - 1,
+    SSD1306_CMD_COMPINS,            0x12,   // Alternative, Disable L2R
+    SSD1306_CMD_COMSCANDIR,
+    SSD1306_CMD_DISPLAYOFFSET,      0x00,
+    SSD1306_CMD_STARTLINE | 0x00,
+    SSD1306_CMD_DISPLAYALLON,
+    SSD1306_CMD_NORMALDISPLAY,
+    SSD1306_CMD_SCROLLOFF,
+    SSD1306_CMD_DISPLAYON,
 };
+
+static rt_uint8_t _framebuffer[CONFIG_GUI_WIDTH * (CONFIG_GUI_HIGH / 8)];
 
 #if CONFIG_USING_GUI
 static const struct rt_device_graphic_info disp_info = {
-    .pixel_format   = RTGRAPHIC_PIXEL_FORMAT_RGB565,
-    .bits_per_pixel = 16,
+    .pixel_format   = RTGRAPHIC_PIXEL_FORMAT_MONO,
+    .bits_per_pixel = 1,
     .reserved       = 0,
     .width          = CONFIG_GUI_WIDTH,
     .height         = CONFIG_GUI_HIGH,
-    .framebuffer    = RT_NULL,
+    .framebuffer    = _framebuffer,
 };
 
 static struct rtgui_graphic_driver_ops disp_ops = {
     .set_pixel      = ssd_set_pixel,
-    .get_pixel      = RT_NULL,
+    .get_pixel      = ssd_get_pixel,
     .draw_hline     = ssd_draw_hline,
     .draw_vline     = ssd_draw_vline,
     .draw_raw_hline = ssd_draw_raw_hline,
@@ -144,14 +145,13 @@ static rt_err_t ssd_write_data(rt_device_t ldev, rt_uint8_t *data,
     rt_err_t ret;
 
     ret = RT_EOK;
-    LOG_D("[SSD] write data [%d]", len);
+    LOG_D("[1306] write data [%d]", len);
 
     do {
          rt_size_t ret_len;
 
         /* send data
-            - color in RGB565 (RRRRRGGG GGGBBBBB) format
-            - send MSB first (RRRRRGGG)
+            - color in mono format
          */
         /* build inst
             - inst len: 0
@@ -166,7 +166,7 @@ static rt_err_t ssd_write_data(rt_device_t ldev, rt_uint8_t *data,
 
         ret_len = rt_device_write(ldev, 0, buf_ins, len);
         if (len != ret_len) {
-            LOG_E("[SSD E] write data failed! [%d]", ret_len);
+            LOG_E("[1306 E] write data failed! [%d]", ret_len);
             ret = -RT_EIO;
             break;
         }
@@ -180,7 +180,7 @@ static void ssd_set_window(rt_uint8_t x1, rt_uint8_t x2, rt_uint8_t y1,
     rt_uint8_t data[6];
 
     /* set x */
-    data[0] = SSD1331_CMD_SETCOLUMN;
+    data[0] = SSD1306_CMD_SETCOLUMN;
     if (x1 > x2) {
         data[1] = x2;
         data[2] = x1;
@@ -189,106 +189,154 @@ static void ssd_set_window(rt_uint8_t x1, rt_uint8_t x2, rt_uint8_t y1,
         data[2] = x2;
     }
     /* set y */
-    data[3] = SSD1331_CMD_SETROW;
+    data[3] = SSD1306_CMD_SETPAGE;
     if (y1 > y2) {
-        data[4] = y2;
-        data[5] = y1;
+        data[4] = y2 / 8;
+        data[5] = y1 / 8;
     } else {
-        data[4] = y1;
-        data[5] = y2;
+        data[4] = y1 / 8;
+        data[5] = y2 / 8;
     }
     SSD_CMD_START();
     (void)ssd_write_data(SSD_CTX()->ldev, data, sizeof(data));
     SSD_CMD_STOP();
-    LOG_D("[SSD] win (%d,%d) (%d,%d)", x1, y1, x2, y2);
-}
-
-static void ssd_draw_line(rtgui_color_t *c, rt_uint8_t x1, rt_uint8_t x2,
-    rt_uint8_t y1, rt_uint8_t y2) {
-    rt_uint8_t data[8];
-
-    data[0] = SSD1331_CMD_DRAWLINE;
-    if (x1 > x2) {
-        data[1] = x2;
-        data[3] = x1;
-    } else {
-        data[1] = x1;
-        data[3] = x2;
-    }
-    if (y1 > y2) {
-        data[2] = y2;
-        data[4] = y1;
-    } else {
-        data[2] = y1;
-        data[4] = y2;
-    }
-    /* color in:  GGGBBBBB RRRRRGGG
-       color out: 00RRRRR0 00GGGGGG 00BBBB0 */
-    data[5] = (rt_uint8_t)((*c & 0x00f8) >> 2);
-    data[6] = (rt_uint8_t)(((*c & 0x0007) << 3) | ((*c & 0xe000) >> 13));
-    data[7] = (rt_uint8_t)((*c & 0x1f00) >> 7);
-    SSD_CMD_START();
-    (void)ssd_write_data(SSD_CTX()->ldev, data, sizeof(data));
-    SSD_CMD_STOP();
-    LOG_D("[SSD] line %04x (%d,%d) (%d,%d)", *c, x1, x2, y1, y2);
+    LOG_D("[1306] win (%d,%d) (%d,%d)", x1, y1, x2, y2);
 }
 
 SCOPE void ssd_set_pixel(rtgui_color_t *c, int x, int y) {
     rt_uint8_t x1 = x & 0x000000ff;
     rt_uint8_t y1 = y & 0x000000ff;
+    rt_uint8_t *ptr = &SSD_BUF()[(y1 >> 3) * SSD_WIDTH() + x1];
+
+    if (*c)
+        *ptr |=  ((rt_uint8_t)1 << (y1 & 0x07));
+    else
+        *ptr &= ~((rt_uint8_t)1 << (y1 & 0x07));
 
     if (RT_EOK != rt_device_open(SSD_CTX()->ldev, RT_DEVICE_OFLAG_RDWR))
         return;
     SSD_START();
     ssd_set_window(x1, x1, y1, y1);
-    ssd_write_data(SSD_CTX()->ldev, (rt_uint8_t *)c, 2);
+    (void)ssd_write_data(SSD_CTX()->ldev, ptr, 1);
     SSD_STOP();
     rt_device_close(SSD_CTX()->ldev);
-    LOG_D("[SSD] set pixel %04x (%d, %d)", *c, x, y);
+    LOG_D("[1306] set pixel %04x (%d, %d)", *c, x, y);
+}
+
+SCOPE void ssd_get_pixel(rtgui_color_t *c, int x, int y) {
+    rt_uint8_t x1 = x & 0x000000ff;
+    rt_uint8_t y1 = y & 0x000000ff;
+    rt_uint8_t *ptr = &SSD_BUF()[(y1 >> 3) * SSD_WIDTH() + x1];
+
+    if (*ptr & (1 << (y1 & 0x07)))
+        *c = 0xffffffff;
+    else
+        *c = 0xff000000;
+    LOG_D("[1306] get pixel %08x (%d, %d)", *c, x, y);
 }
 
 SCOPE void ssd_draw_raw_hline(rt_uint8_t *pixels, int x1, int x2, int y) {
     rt_uint8_t y1 = y & 0x000000ff;
+    rt_uint8_t *ptr;
+    rt_uint8_t mask, i, len;
 
+    x1 &= 0x000000ff;
+    x2 &= 0x000000ff;
+    ptr = &SSD_BUF()[(y1 >> 3) * SSD_WIDTH() + x1];
+    mask = 1 << (y1 & 0x07);
+    len = x2 - x1 + 1;
+    for (i = 0; i < len; i++, ptr++) {
+        if (*(pixels + (i / 8)) & (1 << (i % 8)))
+            *ptr |=  mask;
+        else
+            *ptr &= ~mask;
+    }
+
+    ptr = &SSD_BUF()[(y1 >> 3) * SSD_WIDTH() + x1];
     if (RT_EOK != rt_device_open(SSD_CTX()->ldev, RT_DEVICE_OFLAG_RDWR))
         return;
     SSD_START();
-    ssd_set_window((x1 & 0x000000ff), (x2 & 0x000000ff), y1, y1);
-    ssd_write_data(SSD_CTX()->ldev, pixels, (x2 - x1 + 1) * 2);
+    ssd_set_window(x1, x2, y1, y1);
+    (void)ssd_write_data(SSD_CTX()->ldev, ptr, len);
     SSD_STOP();
     rt_device_close(SSD_CTX()->ldev);
-    LOG_D("[SSD] raw hline (%d - %d, %d)", x1, x2, y);
+    LOG_D("[1306] raw hline (%d - %d, %d)", x1, x2, y);
 }
 
 SCOPE void ssd_draw_hline(rtgui_color_t *c, int x1, int x2, int y) {
     rt_uint8_t y1 = y & 0x000000ff;
+    rt_uint8_t *ptr;
+    rt_uint8_t mask, i, len;
 
+    x1 &= 0x000000ff;
+    x2 &= 0x000000ff;
+    ptr = &SSD_BUF()[(y1 >> 3) * SSD_WIDTH() + x1];
+    mask = 1 << (y1 & 0x07);
+    len = x2 - x1 + 1;
+    if (*c) {
+        for (i = 0; i < len; i++, ptr++)
+            *ptr |=  mask;
+    } else {
+        for (i = 0; i < len; i++, ptr++)
+            *ptr &= ~mask;
+    }
+
+    ptr = &SSD_BUF()[(y1 >> 3) * SSD_WIDTH() + x1];
     if (RT_EOK != rt_device_open(SSD_CTX()->ldev, RT_DEVICE_OFLAG_RDWR))
         return;
     SSD_START();
-    ssd_draw_line(c, (x1 & 0x000000ff), (x2 & 0x000000ff), y1, y1);
+    ssd_set_window(x1, x2, y1, y1);
+    (void)ssd_write_data(SSD_CTX()->ldev, ptr, len);
     SSD_STOP();
     rt_device_close(SSD_CTX()->ldev);
-    LOG_D("[SSD] hline %04x (%d - %d, %d)", *c, x1, x2, y);
+    LOG_D("[1306] hline %04x (%d - %d, %d)", *c, x1, x2, y);
 }
 
 SCOPE void ssd_draw_vline(rtgui_color_t *c, int x , int y1, int y2) {
     rt_uint8_t x1 = x & 0x000000ff;
+    rt_uint8_t *ptr;
+    rt_uint8_t mask, y, len;
 
+    y1 &= 0x000000ff;
+    y2 &= 0x000000ff;
+    ptr = &SSD_BUF()[(y1 >> 3) * SSD_WIDTH() + x1];
+    len = 1;
+    if (*c) {
+        for (y = y1; y < y2; y++) {
+            mask = 1 << (y % 8);
+            *ptr |=  mask;
+            if (mask == 0x80) {
+                ptr++;
+                len++;
+            }
+        }
+    } else {
+        for (y = y1; y < y2; y++) {
+            mask = 1 << (y % 8);
+            *ptr &= ~mask;
+            if (mask == 0x80) {
+                ptr++;
+                len++;
+            }
+        }
+    }
+
+    ptr = &SSD_BUF()[(y1 >> 3) * SSD_WIDTH() + x1];
     if (RT_EOK != rt_device_open(SSD_CTX()->ldev, RT_DEVICE_OFLAG_RDWR))
         return;
     SSD_START();
-    ssd_draw_line(c, x1, x1, (y1 & 0x000000ff), (y2 & 0x000000ff));
+    ssd_set_window(x1, x1, y1, y2);
+    (void)ssd_write_data(SSD_CTX()->ldev, ptr, len);
     SSD_STOP();
-    rt_device_close(SSD_CTX()->ldev);
-    LOG_D("[SSD] vline %04x (%d, %d - %d)", *c, x, y1, y2);
+    LOG_D("[1306] vline %04x (%d, %d - %d)", *c, x, y1, y2);
 }
 
-static rt_err_t bsp_ssd1331_init(rt_device_t dev) {
+static rt_err_t bsp_ssd1306_init(rt_device_t dev) {
     struct bsp_ssd_contex *ctx = SSD_CTX();
     rt_err_t ret;
     (void)dev;
 
+    rt_memset(_framebuffer, 0x00, sizeof(_framebuffer));
     /* open lower level device */
     ret = rt_device_open(ctx->ldev, RT_DEVICE_OFLAG_RDWR);
     if (RT_EOK != ret) return ret;
@@ -302,23 +350,21 @@ static rt_err_t bsp_ssd1331_init(rt_device_t dev) {
         SSD_CMD_STOP();
         if (RT_EOK != ret) break;
 
-        SSD_LIGHT_ON();
-        LOG_D("[SSD] init ok");
+        LOG_D("[1306] init ok");
     } while (0);
 
     SSD_STOP();
     rt_device_close(ctx->ldev);
 
     if (RT_EOK != ret) {
-        LOG_W("[SSD E] init failed! (%08x)", ret);
+        LOG_W("[1306 E] init failed! (%08x)", ret);
     }
     return ret;
 }
 
-static rt_err_t bsp_ssd1331_control(rt_device_t dev, rt_int32_t cmd,
+static rt_err_t bsp_ssd1306_control(rt_device_t dev, rt_int32_t cmd,
     void *args) {
     struct bsp_ssd_contex *ctx = SSD_CTX();
-    rt_uint8_t data[1];
     rt_err_t ret = -RT_ERROR;
     #if !CONFIG_USING_GUI
         (void)args;
@@ -327,34 +373,24 @@ static rt_err_t bsp_ssd1331_control(rt_device_t dev, rt_int32_t cmd,
 
     switch (cmd) {
     case RTGRAPHIC_CTRL_RECT_UPDATE:
+    {
+        // struct rt_device_rect_info *rect = (struct rt_device_rect_info *)args;
+        // LOG_D("update: %d %d, %d %d", rect->x, rect->y, rect->width,
+        //     rect->height);
+
+        ret = rt_device_open(ctx->ldev, RT_DEVICE_OFLAG_RDWR);
+        if (RT_EOK != ret) return ret;
+        SSD_START();
+        ssd_set_window(0, CONFIG_GUI_WIDTH - 1, 0, CONFIG_GUI_HIGH - 1);
+        (void)ssd_write_data(SSD_CTX()->ldev, _framebuffer,
+            sizeof(_framebuffer));
+        SSD_STOP();
+        rt_device_close(SSD_CTX()->ldev);
         break;
+    }
 
     case RTGRAPHIC_CTRL_POWERON:
-        ret = rt_device_open(ctx->ldev, RT_DEVICE_OFLAG_RDWR);
-        if (RT_EOK != ret) break;
-        data[0] = SSD1331_CMD_DISPLAYON;
-        SSD_START();
-        SSD_CMD_START();
-        ret = ssd_write_data(ctx->ldev, data, sizeof(data));
-        SSD_CMD_STOP();
-        SSD_STOP();
-        rt_device_close(ctx->ldev);
-        if (RT_EOK != ret) break;
-        SSD_LIGHT_ON();
-        break;
-
     case RTGRAPHIC_CTRL_POWEROFF:
-        ret = rt_device_open(ctx->ldev, RT_DEVICE_OFLAG_RDWR);
-        if (RT_EOK != ret) break;
-        data[0] = SSD1331_CMD_DISPLAYOFF;
-        SSD_START();
-        SSD_CMD_START();
-        ret = ssd_write_data(ctx->ldev, data, sizeof(data));
-        SSD_CMD_STOP();
-        SSD_STOP();
-        rt_device_close(ctx->ldev);
-        if (RT_EOK != ret) break;
-        SSD_LIGHT_OFF();
         break;
 
     case RTGRAPHIC_CTRL_GET_INFO:
@@ -393,7 +429,7 @@ static rt_err_t bsp_ssd1331_control(rt_device_t dev, rt_int32_t cmd,
  * @return rt_err_t - Error code
  *
  ******************************************************************************/
-static rt_err_t bsp_ssd1331_contex_init(struct bsp_ssd_contex *ctx,
+static rt_err_t bsp_ssd1306_contex_init(struct bsp_ssd_contex *ctx,
     const char *name, rt_device_t ldev) {
     rt_err_t ret;
 
@@ -409,12 +445,12 @@ static rt_err_t bsp_ssd1331_contex_init(struct bsp_ssd_contex *ctx,
         ctx->dev.type = RT_Device_Class_Graphic;
         ctx->dev.rx_indicate = RT_NULL;
         ctx->dev.tx_complete = RT_NULL;
-        ctx->dev.init = bsp_ssd1331_init;
+        ctx->dev.init = bsp_ssd1306_init;
         ctx->dev.open = RT_NULL;
         ctx->dev.close = RT_NULL;
         ctx->dev.read = RT_NULL;
         ctx->dev.write = RT_NULL;
-        ctx->dev.control = bsp_ssd1331_control;
+        ctx->dev.control = bsp_ssd1306_control;
         #if CONFIG_USING_GUI
             /* RTT-GUI will get ops here */
             ctx->dev.user_data = (void *)&disp_ops;
@@ -433,7 +469,7 @@ static rt_err_t bsp_ssd1331_contex_init(struct bsp_ssd_contex *ctx,
  * @return rt_err_t - Error code
  *
  ******************************************************************************/
-rt_err_t bsp_hw_ssd1331_init(void) {
+rt_err_t bsp_hw_ssd1306_init(void) {
     rt_err_t ret;
 
     do {
@@ -442,28 +478,27 @@ rt_err_t bsp_hw_ssd1331_init(void) {
         /* get lower level device */
         ldev = rt_device_find(SSD_LOWER_DEVICE_NAME);
         if (RT_NULL == ldev) {
-            LOG_D("[SSD] can't find device %s!", SSD_LOWER_DEVICE_NAME);
+            LOG_D("[1306] can't find device %s!", SSD_LOWER_DEVICE_NAME);
             ret = -RT_ERROR;
             break;
         }
-        LOG_D("[SSD] find device %s", SSD_LOWER_DEVICE_NAME);
+        LOG_D("[1306] find device %s", SSD_LOWER_DEVICE_NAME);
 
-        /* switch to max speed */
+        /* switch to ssd1306 speed */
         ret = rt_device_control(ldev, RT_DEVICE_CTRL_SPI_SPEED,
-            (void *)SSD1331_SPI_SPEED);
+            (void *)SSD1306_SPI_SPEED);
         if (RT_EOK != ret) break;
 
-        ret = bsp_ssd1331_contex_init(SSD_CTX(), SSD_NAME, ldev);
+        ret = bsp_ssd1306_contex_init(SSD_CTX(), SSD_NAME, ldev);
         if (RT_EOK != ret) break;
 
         SSD_IO_INIT();
         SSD_RESET();
-        SSD_LIGHT_OFF();
-        LOG_D("[SSD] h/w init ok");
+        LOG_D("[1306] h/w init ok");
     } while (0);
 
     if (RT_EOK != ret) {
-        LOG_E("[SSD] h/w init failed: %d", ret);
+        LOG_E("[1306] h/w init failed: %d", ret);
     }
 
     return ret;
@@ -473,6 +508,6 @@ rt_err_t bsp_hw_ssd1331_init(void) {
  * @}
  ******************************************************************************/
 
-#endif /* defined(CONFIG_ARDUINO) && CONFIG_USING_SSD1331 */
+#endif /* defined(CONFIG_ARDUINO) && CONFIG_USING_SSD1306 */
 
 } /* extern "C" */
