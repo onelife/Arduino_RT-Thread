@@ -14,6 +14,8 @@ I hope this project will release the power of multitasking on Arduino platform.
 | SD Card | SPI | |
 | ILI9341 (LCD) | SPI | Tested with Adafruit 2.8" TFT Touch Shield v2 |
 | FT6206 (Touch Screen) | IIC | Tested with Adafruit 2.8" TFT Touch Shield v2 |
+| SSD1331 (LCD) | SPI | [Tested with TinyCircuits's Pocket Arcade](https://tinycircuits.com/products/pocket-arcade) |
+| SSD1306 (LCD) | SPI | Tested with a 0.96" OLED module |
 
 
 ## Available Components ##
