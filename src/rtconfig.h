@@ -14,6 +14,15 @@
 
 /* Hardware Config */
 
+/* Longan Nano */
+#ifdef BOARD_SIPEED_LONGAN_NANO
+# define ARDUINO_ARCH_RISCV
+# define CONFIG_USING_DRIVER_SERIAL     (1)
+# define CONFIG_USING_UART0             (1)
+# define CONFIG_HEAP_SIZE               (20 * 1024)
+# define IDLE_THREAD_STACK_SIZE         (1 * 512)
+#endif /* BOARD_SIPEED_LONGAN_NANO */
+
 /* Adafruit 2.8" TFT Touch Shield v2 (Capacitive) */
 #ifdef CONFIG_USING_ADAFRUIT_TFT_CAPACITIVE
 # ifdef ARDUINO_SAM_DUE
@@ -99,13 +108,14 @@
 #define CONFIG_ARDUINO
 #define CONFIG_TICK_PER_SECOND          (1000)  /* Platform */
 
-#ifndef CONFIG_PRIORITY_MAX
-# define CONFIG_PRIORITY_MAX            (3)     /* NVIC */
-#endif
-
+#if defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD)
+# ifndef CONFIG_PRIORITY_MAX
+#  define CONFIG_PRIORITY_MAX           (3)     /* NVIC */
+# endif
 #ifndef CONFIG_KERNEL_PRIORITY
 # define CONFIG_KERNEL_PRIORITY         (2)     /* Platform */
 #endif
+#endif /* defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD) */
 
 #ifndef CONFIG_HEAP_SIZE
 # ifdef ARDUINO_ARCH_SAM
@@ -118,12 +128,29 @@
 
 /* Default User Config */
 
-#ifndef CONFIG_USING_RTC
-# define CONFIG_USING_RTC               (0)
-#endif
-
 #ifndef CONFIG_USART_SPEED
 # define CONFIG_USART_SPEED             (115200)
+#endif
+
+#ifndef CONFIG_USING_DRIVER_SERIAL
+# define CONFIG_USING_DRIVER_SERIAL     (0)
+#endif
+
+#ifndef CONFIG_USING_UART0
+# define CONFIG_USING_UART0             (0)
+#endif
+#ifndef CONFIG_USING_UART1
+# define CONFIG_USING_UART1             (0)
+#endif
+
+#if CONFIG_USING_DRIVER_SERIAL
+# if !CONFIG_USING_UART0 && !CONFIG_USING_UART1
+#  error "CONFIG_USING_UARTx must be enabled for Serial Driver"
+# endif
+#endif
+
+#ifndef CONFIG_USING_DRIVER_RTC
+# define CONFIG_USING_DRIVER_RTC        (0)
 #endif
 
 #ifndef CONFIG_USING_CONSOLE
@@ -263,11 +290,6 @@
 # endif
 #endif /* CONFIG_USING_GUI */
 
-#if CONFIG_USING_RTC
-# define RT_USING_RTC
-# define RT_USING_ALARM
-#endif
-
 
 /* Debug Config */
 
@@ -329,6 +351,25 @@
 // #define RT_USING_MEMHEAP
 #define RT_USING_HEAP
 #define RT_USING_SMALL_MEM
+
+
+/* RTT Driver COnfig */
+
+#if CONFIG_USING_DRIVER_SERIAL
+# define CONFIG_USING_BSP               (1)
+#else
+# define CONFIG_USING_BSP               (0)
+#endif
+#if CONFIG_USING_DRIVER_SERIAL
+# define RT_USING_DEVICE_IPC
+#endif
+#if CONFIG_USING_DRIVER_SERIAL
+# define RT_USING_SERIAL
+#endif
+#if CONFIG_USING_DRIVER_RTC
+# define RT_USING_RTC
+# define RT_USING_ALARM
+#endif
 
 
 /* Console Config */

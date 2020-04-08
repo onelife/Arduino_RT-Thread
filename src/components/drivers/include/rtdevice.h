@@ -14,14 +14,18 @@
 
 #include "include/rtthread.h"
 
-// #include "ipc/ringbuffer.h"
-// #include "ipc/completion.h"
-// #include "ipc/dataqueue.h"
-// #include "ipc/workqueue.h"
-// #include "ipc/waitqueue.h"
-// #include "ipc/pipe.h"
-// #include "ipc/poll.h"
-// #include "ipc/ringblk_buf.h"
+#ifdef RT_USING_DEVICE_IPC
+# include "ipc/ringbuffer.h"
+# include "ipc/completion.h"
+# include "ipc/waitqueue.h"
+# include "ipc/poll.h"
+# include "ipc/ringblk_buf.h"
+# ifdef RT_USING_HEAP
+#  include "ipc/dataqueue.h"
+#  include "ipc/workqueue.h"
+#  include "ipc/pipe.h"
+# endif /* RT_USING_HEAP */
+#endif /* RT_USING_DEVICE_IPC */
 
 #ifdef __cplusplus
 extern "C" {
@@ -120,6 +124,18 @@ extern "C" {
 #endif
 #ifdef MTD_USING_NAND
 #include "drivers/mtdnand.h"
+#endif
+
+#ifdef RT_USING_HWCRYPTO
+#include "drivers/crypto.h"
+#endif
+
+#ifdef RT_USING_PULSE_ENCODER
+#include "drivers/pulse_encoder.h"
+#endif
+
+#ifdef RT_USING_INPUT_CAPTURE
+#include "drivers/rt_inputcapture.h"
 #endif
 
 #ifdef __cplusplus

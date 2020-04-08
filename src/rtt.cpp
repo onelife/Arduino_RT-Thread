@@ -6,30 +6,32 @@
 #include <Arduino.h>
 #include "rtt.h"
 
-#if (CONFIG_PRIORITY_MAX > ((1 << __NVIC_PRIO_BITS) - 1))
-    #error "CONFIG_PRIORITY_MAX is more than max hardware priority level"
-#endif
-
-#if (CONFIG_KERNEL_PRIORITY > CONFIG_PRIORITY_MAX)
-    #error "CONFIG_KERNEL_PRIORITY can not be more than CONFIG_PRIORITY_MAX"
-#endif
+#if defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD)
+# if (CONFIG_PRIORITY_MAX > ((1 << __NVIC_PRIO_BITS) - 1))
+#  error "CONFIG_PRIORITY_MAX is more than max hardware priority level"
+# endif
+# if (CONFIG_KERNEL_PRIORITY > CONFIG_PRIORITY_MAX)
+#  error "CONFIG_KERNEL_PRIORITY can not be more than CONFIG_PRIORITY_MAX"
+# endif
+#endif /* defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD) */
 
 #if (RT_TICK_PER_SECOND > CONFIG_TICK_PER_SECOND)
-    #error "RT_TICK_PER_SECOND can not be more than CONFIG_TICK_PER_SECOND"
+# error "RT_TICK_PER_SECOND can not be more than CONFIG_TICK_PER_SECOND"
 #endif
 
-
-#define KERNEL_PRIORITY     ((CONFIG_KERNEL_PRIORITY << (8 - __NVIC_PRIO_BITS)) & 0xff)
-#define TICK_COUNT          (CONFIG_TICK_PER_SECOND / RT_TICK_PER_SECOND)
-#if (CONFIG_USING_CONSOLE)
-    #define SERIAL_DEVICE   CONFIG_SERIAL_DEVICE
-#endif
 #if (CONFIG_USING_FINSH)
-    #define SERIAL_NAME     "Serial"
+# define SERIAL_NAME       "Serial"
 #endif
 
+#if defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD)
 
-#if CONFIG_USING_FINSH
+# define KERNEL_PRIORITY    ((CONFIG_KERNEL_PRIORITY << (8 - __NVIC_PRIO_BITS)) & 0xff)
+# define TICK_COUNT         (CONFIG_TICK_PER_SECOND / RT_TICK_PER_SECOND)
+# if (CONFIG_USING_CONSOLE)
+#  define SERIAL_DEVICE     CONFIG_SERIAL_DEVICE
+# endif
+
+# if CONFIG_USING_FINSH
 
 /* === Map Arduino "Serial" to RT-Thread Device === */
 
@@ -74,13 +76,15 @@ static rt_err_t arduino_serial_init(void) {
     return rt_device_register(&serial_dev, SERIAL_NAME, flag);
 }
 
-#endif /* CONFIG_USING_FINSH */
+# endif /* CONFIG_USING_FINSH */
 
+#endif /* defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD) */
 
 extern "C" {
     /* === Override RT-Thread Functions === */
 
 #if defined(RT_DEBUG)
+
     void assert_failed(uint8_t * file, uint32_t line) {
         pinMode(LED_BUILTIN, OUTPUT);
         digitalWrite(LED_BUILTIN, HIGH);
@@ -91,7 +95,10 @@ extern "C" {
         while (1) {
         }
     }
+
 #endif /* defined(RT_DEBUG) */
+
+#if defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD)
 
     rt_base_t rt_hw_interrupt_disable(void) {
         rt_base_t original_level;
@@ -146,6 +153,7 @@ extern "C" {
         return 0;
     }
 
+#endif /* defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD) */
 } /* extern "C" */
 
 
@@ -158,7 +166,7 @@ extern "C" {
     #if CONFIG_USING_IIC0 || CONFIG_USING_IIC1
     # include "components/arduino/drv_iic.h"
     #endif
-    #if CONFIG_USING_RTC
+    #if CONFIG_USING_DRIVER_RTC
     # include "components/arduino/drv_rtc.h"
     #endif
     #if CONFIG_USING_FINSH
@@ -200,6 +208,9 @@ extern "C" {
     #if CONFIG_USING_FT6206
     # include "components/arduino/drv_iic_ft6206.h"
     #endif
+    #if CONFIG_USING_BSP
+    # include "bsp/bsp.h"
+    # endif
 }
 #if CONFIG_USING_GUI
 # include <rttgui.h>
@@ -209,9 +220,20 @@ extern "C" {
 void rt_driver_init(void) {
     rt_err_t ret;
 
+    #if defined(ARDUINO_ARCH_RISCV)
+        set_csr(mstatus, MSTATUS_MIE);
+        ret = bsp_hw_tick_init();
+        RT_ASSERT(RT_EOK == ret);
+    #endif
     #if (CONFIG_USING_CONSOLE)
+    # if CONFIG_USING_DRIVER_SERIAL
+        ret = bsp_hw_usart_init();
+        RT_ASSERT(RT_EOK == ret);
+        rt_console_set_device(SERIAL_NAME);
+    # else
         SERIAL_DEVICE.begin(CONFIG_USART_SPEED);
         while (!SERIAL_DEVICE);
+    # endif
     #endif
     #if (CONFIG_USING_SPI0 || CONFIG_USING_SPI1)
         ret = bsp_hw_spi_init();
@@ -221,7 +243,7 @@ void rt_driver_init(void) {
         ret = bsp_hw_iic_init();
         RT_ASSERT(RT_EOK == ret);
     #endif
-    #if CONFIG_USING_RTC
+    #if CONFIG_USING_DRIVER_RTC
         ret = bsp_hw_rtc_init();
         RT_ASSERT(RT_EOK == ret);
     #endif
@@ -302,8 +324,10 @@ void rt_components_init(void) {
 
     /* INIT_APP_EXPORT */
     #if CONFIG_USING_FINSH
+    # if !CONFIG_USING_DRIVER_SERIAL
         arduino_serial_init();
         rt_console_set_device(SERIAL_NAME);
+    # endif
         finsh_system_init();
     #endif
 }
@@ -323,8 +347,10 @@ void arduino_thread_entry(void *param) {
     /* run Arduino loop here */
     while (1) {
         loop();
-        if (serialEventRun) serialEventRun();
-        rt_thread_sleep(1);
+        #if !CONFIG_USING_DRIVER_SERIAL
+            if (serialEventRun) serialEventRun();
+            rt_thread_sleep(1);
+        #endif
     }
 }
 
@@ -358,20 +384,24 @@ void rt_setup(void) __attribute__((weak));
 void loop(void) __attribute__((weak));
 
 void rt_setup(void) { }
-void loop(void) { }
+void loop(void) { rt_thread_sleep(RT_TICK_PER_SECOND); }
 
 /* === RT-Thread Class === */
 
 void RT_Thread::begin(void) {
-    #if defined(ARDUINO_SAM_DUE)
+    #if defined(ARDUINO_ARCH_SAM)
         NVIC_SetPriority(UART_IRQn, CONFIG_PRIORITY_MAX);
-    #elif defined(ARDUINO_SAMD_MKRZERO) || defined(ARDUINO_SAMD_ZERO)
+    #elif defined(ARDUINO_ARCH_SAMD)
         NVIC_SetPriority(USB_IRQn, CONFIG_PRIORITY_MAX);
+    #elif defined(ARDUINO_ARCH_RISCV)
+        /* none */
     #else
-        #warning "Unsupported board!"
+        #warning "Unsupported architecture!"
     #endif
+    #if defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD)
     NVIC_SetPriority(SysTick_IRQn, CONFIG_KERNEL_PRIORITY);
     NVIC_SetPriority(PendSV_IRQn, CONFIG_KERNEL_PRIORITY);
+    #endif
 
     /* disable interrupt*/
     rt_hw_interrupt_disable();

@@ -8,7 +8,7 @@ extern "C" {
 
 #include "include/rtthread.h"
 
-#if (defined(CONFIG_ARDUINO) && CONFIG_USING_RTC)
+#if (defined(CONFIG_ARDUINO) && CONFIG_USING_DRIVER_RTC)
 }
 
 #include <time.h>
@@ -238,6 +238,6 @@ rt_err_t bsp_hw_rtc_init(void) {
  * @}
  ******************************************************************************/
 
-#endif /* (defined(CONFIG_ARDUINO) && CONFIG_USING_RTC) */
+#endif /* (defined(CONFIG_ARDUINO) && CONFIG_USING_DRIVER_RTC) */
 
 } /* extern "C" */
