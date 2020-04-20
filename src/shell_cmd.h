@@ -94,7 +94,7 @@ ADD_MSH_CMD(cd, change current working directory, cmd_cd, int, int argc, char **
 ADD_MSH_CMD(pwd, show current working directory, cmd_pwd, int, int argc, char **argv)
 # endif
 #endif /* RT_USING_DFS */
-#if CONFIG_USING_SPISD
+#if !CONFIG_USING_DRIVER_SPI && CONFIG_USING_SPISD
 ADD_FINSH_CMD(list_sd, show SD info, list_sd, rt_err_t, void)
 ADD_MSH_CMD(lsd, show SD info, list_sd, rt_err_t, void)
 #endif

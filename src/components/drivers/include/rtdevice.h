@@ -44,6 +44,10 @@ extern "C" {
 #include "drivers/spi.h"
 #endif /* RT_USING_SPI */
 
+#ifdef RT_USING_SPI_MSD
+#include "drivers/spi_msd.h"
+#endif /* RT_USING_SPI_MSD */
+
 #ifdef RT_USING_MTD_NOR
 #include "drivers/mtd_nor.h"
 #endif /* RT_USING_MTD_NOR */

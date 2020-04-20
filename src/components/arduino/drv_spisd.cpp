@@ -8,7 +8,7 @@ extern "C" {
 
 #include "include/rtthread.h"
 
-#if defined(CONFIG_ARDUINO) && CONFIG_USING_SPISD
+#if defined(CONFIG_ARDUINO) && !CONFIG_USING_DRIVER_SPI && CONFIG_USING_SPISD
 }
 
 #include <Arduino.h>
@@ -1015,6 +1015,6 @@ FINSH_FUNCTION_EXPORT(list_sd, show SD information.)
  * @}
  ******************************************************************************/
 
-#endif /* defined(CONFIG_ARDUINO) && CONFIG_USING_SPISD */
+#endif /* defined(CONFIG_ARDUINO) && !CONFIG_USING_DRIVER_SPI && CONFIG_USING_SPISD */
 
 } /* extern "C" */

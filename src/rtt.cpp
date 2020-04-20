@@ -19,7 +19,10 @@
 # error "RT_TICK_PER_SECOND can not be more than CONFIG_TICK_PER_SECOND"
 #endif
 
-#if (CONFIG_USING_FINSH)
+#define _NUM_TO_STR(n)      #n
+#define _DEF_TO_STR(ch)     _NUM_TO_STR(ch)
+
+#if (CONFIG_USING_CONSOLE)
 # define SERIAL_NAME       "Serial"
 #endif
 
@@ -28,18 +31,18 @@
 # define KERNEL_PRIORITY    ((CONFIG_KERNEL_PRIORITY << (8 - __NVIC_PRIO_BITS)) & 0xff)
 # define TICK_COUNT         (CONFIG_TICK_PER_SECOND / RT_TICK_PER_SECOND)
 # if (CONFIG_USING_CONSOLE)
-#  define SERIAL_DEVICE     CONFIG_SERIAL_DEVICE
+#  define CONSOLE_DEVICE    CONFIG_SERIAL_DEVICE
 # endif
 
-# if CONFIG_USING_FINSH
 
+# if CONFIG_USING_CONSOLE
 /* === Map Arduino "Serial" to RT-Thread Device === */
 
 static struct rt_device serial_dev;
 
 static rt_err_t serial_close(rt_device_t dev) {
     (void)dev;
-    SERIAL_DEVICE.end();
+    CONSOLE_DEVICE.end();
     return RT_EOK;
 }
 
@@ -47,14 +50,14 @@ static rt_size_t serial_read(rt_device_t dev, rt_off_t pos,
     void *buffer, rt_size_t size) {
     (void)dev;
     (void)pos;
-    return SERIAL_DEVICE.readBytes((char *)buffer, size);
+    return CONSOLE_DEVICE.readBytes((char *)buffer, size);
 }
 
 static rt_size_t serial_write(rt_device_t dev, rt_off_t pos,
     const void *buffer, rt_size_t size) {
     (void)dev;
     (void)pos;
-    return SERIAL_DEVICE.write((const uint8_t *)buffer, size);
+    return CONSOLE_DEVICE.write((const uint8_t *)buffer, size);
 }
 
 static rt_err_t arduino_serial_init(void) {
@@ -71,7 +74,7 @@ static rt_err_t arduino_serial_init(void) {
     serial_dev.read         = serial_read;
     serial_dev.write        = serial_write;
     serial_dev.control      = RT_NULL;
-    // serial_dev.user_data    = SERIAL_DEVICE;
+    // serial_dev.user_data    = CONSOLE_DEVICE;
 
     return rt_device_register(&serial_dev, SERIAL_NAME, flag);
 }
@@ -129,7 +132,7 @@ extern "C" {
     void rt_hw_console_output(const char *str) {
         #if (CONFIG_USING_CONSOLE)
             if (NULL != str) {
-                SERIAL_DEVICE.print(str);
+                CONSOLE_DEVICE.print(str);
             }
         #endif
     }
@@ -146,8 +149,8 @@ extern "C" {
 
         #if CONFIG_USING_FINSH
             if ((serial_dev.rx_indicate != RT_NULL) && \
-                 SERIAL_DEVICE.available()) {
-                serial_dev.rx_indicate(&serial_dev, SERIAL_DEVICE.available());
+                 CONSOLE_DEVICE.available()) {
+                serial_dev.rx_indicate(&serial_dev, CONSOLE_DEVICE.available());
             }
         #endif
         return 0;
@@ -160,7 +163,8 @@ extern "C" {
 /* === Initialize Conponents and Handle Arduino Stuff === */
 
 extern "C" {
-    #if CONFIG_USING_SPI0 || CONFIG_USING_SPI1
+    #include "components/drivers/include/rtdevice.h"
+    #if !CONFIG_USING_DRIVER_SPI && (CONFIG_USING_SPI0 || CONFIG_USING_SPI1)
     # include "components/arduino/drv_spi.h"
     #endif
     #if CONFIG_USING_IIC0 || CONFIG_USING_IIC1
@@ -205,6 +209,9 @@ extern "C" {
     #if CONFIG_USING_SSD1331
     # include "components/arduino/drv_spi_ssd1331.h"
     #endif
+    #if CONFIG_USING_ST7735
+    # include "components/arduino/drv_spi_st7735.h"
+    #endif
     #if CONFIG_USING_FT6206
     # include "components/arduino/drv_iic_ft6206.h"
     #endif
@@ -225,14 +232,13 @@ void rt_driver_init(void) {
         ret = bsp_hw_tick_init();
         RT_ASSERT(RT_EOK == ret);
     #endif
-    #if (CONFIG_USING_CONSOLE)
+    #if CONFIG_USING_CONSOLE
     # if CONFIG_USING_DRIVER_SERIAL
         ret = bsp_hw_usart_init();
         RT_ASSERT(RT_EOK == ret);
-        rt_console_set_device(SERIAL_NAME);
     # else
-        SERIAL_DEVICE.begin(CONFIG_USART_SPEED);
-        while (!SERIAL_DEVICE);
+        CONSOLE_DEVICE.begin(CONFIG_USART_SPEED);
+        while (!CONSOLE_DEVICE);
     # endif
     #endif
     #if (CONFIG_USING_SPI0 || CONFIG_USING_SPI1)
@@ -259,7 +265,18 @@ void rt_high_driver_init(void) {
         RT_ASSERT(RT_EOK == ret);
     #endif
     #if CONFIG_USING_SPISD
+    # ifndef RT_USING_SPI_MSD
         ret = bsp_hw_spiSd_init();
+    # else
+    {
+        static struct rt_spi_device spi_dev;
+
+        ret = rt_spi_bus_attach_device(&spi_dev, "SPISD",
+            "SPI" _DEF_TO_STR(CONFIG_SD_SPI_CHANNEL), NULL);
+        RT_ASSERT(RT_EOK == ret);
+        ret = msd_init("SD", "SPISD");
+    }
+    # endif
         RT_ASSERT(RT_EOK == ret);
     #endif
     #if CONFIG_USING_ILI
@@ -272,6 +289,10 @@ void rt_high_driver_init(void) {
     #endif
     #if CONFIG_USING_SSD1331
         ret = bsp_hw_ssd1331_init();
+        RT_ASSERT(RT_EOK == ret);
+    #endif
+    #if CONFIG_USING_ST7735
+        ret = bsp_hw_st7735_init();
         RT_ASSERT(RT_EOK == ret);
     #endif
     #if CONFIG_USING_FT6206
@@ -287,6 +308,13 @@ void rt_high_driver_init(void) {
 
 /* Component init */
 void rt_components_init(void) {
+    #if CONFIG_USING_CONSOLE
+    # if !CONFIG_USING_DRIVER_SERIAL
+        arduino_serial_init();
+    # endif
+        rt_console_set_device(SERIAL_NAME);
+    #endif
+
     #ifdef ULOG_BACKEND_USING_CONSOLE
         (void)ulog_console_backend_init();
     #elif defined(RT_USING_ULOG)
@@ -324,10 +352,6 @@ void rt_components_init(void) {
 
     /* INIT_APP_EXPORT */
     #if CONFIG_USING_FINSH
-    # if !CONFIG_USING_DRIVER_SERIAL
-        arduino_serial_init();
-        rt_console_set_device(SERIAL_NAME);
-    # endif
         finsh_system_init();
     #endif
 }
@@ -349,8 +373,8 @@ void arduino_thread_entry(void *param) {
         loop();
         #if !CONFIG_USING_DRIVER_SERIAL
             if (serialEventRun) serialEventRun();
-            rt_thread_sleep(1);
         #endif
+        rt_thread_sleep(1);
     }
 }
 

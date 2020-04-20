@@ -8,7 +8,7 @@ extern "C" {
 
 #include "include/rtthread.h"
 
-#if defined(CONFIG_ARDUINO) && (CONFIG_USING_SPI0 || CONFIG_USING_SPI1)
+#if defined(CONFIG_ARDUINO) && !CONFIG_USING_DRIVER_SPI && (CONFIG_USING_SPI0 || CONFIG_USING_SPI1)
 }
 
 #include <Arduino.h>
@@ -421,6 +421,6 @@ rt_err_t bsp_hw_spi_init(void) {
  * @}
  ******************************************************************************/
 
-#endif /* defined(CONFIG_ARDUINO) && (CONFIG_USING_SPI0 || CONFIG_USING_SPI1) */
+#endif /* defined(CONFIG_ARDUINO) && !CONFIG_USING_DRIVER_SPI && (CONFIG_USING_SPI0 || CONFIG_USING_SPI1) */
 
 } /* extern "C" */

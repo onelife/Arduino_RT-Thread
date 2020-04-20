@@ -19,6 +19,25 @@
 # define ARDUINO_ARCH_RISCV
 # define CONFIG_USING_DRIVER_SERIAL     (1)
 # define CONFIG_USING_UART0             (1)
+# define CONFIG_USING_DRIVER_SPI        (1)
+
+# define CONFIG_USING_SPI1              (1)
+# define CONFIG_USING_SPISD             (1)
+# define CONFIG_SD_SPI_CHANNEL          1
+
+# define CONFIG_USING_SPI0              (1)
+# define CONFIG_USING_ST7735            (1)
+# define CONFIG_ST7735_PORT             (GPIOB)
+# define CONFIG_ST7735_PORT_CLK         (RCU_GPIOB)
+# define CONFIG_ST7735_CS_PIN           (GPIO_PIN_2)
+# define CONFIG_ST7735_DC_PIN           (GPIO_PIN_0)
+# define CONFIG_ST7735_RST_PIN          (GPIO_PIN_1)
+# define CONFIG_ST7735_SPI_CHANNEL      0
+
+# define CONFIG_USING_GUI               (1)
+# define CONFIG_GUI_WIDTH               (160)
+# define CONFIG_GUI_HIGH                (80)
+
 # define CONFIG_HEAP_SIZE               (20 * 1024)
 # define IDLE_THREAD_STACK_SIZE         (1 * 512)
 #endif /* BOARD_SIPEED_LONGAN_NANO */
@@ -143,9 +162,26 @@
 # define CONFIG_USING_UART1             (0)
 #endif
 
+#ifndef CONFIG_USING_DRIVER_SPI
+# define CONFIG_USING_DRIVER_SPI        (0)
+#endif
+
+#ifndef CONFIG_USING_SPI0
+# define CONFIG_USING_SPI0              (0)
+#endif
+#ifndef CONFIG_USING_SPI1
+# define CONFIG_USING_SPI1              (0)
+#endif
+
 #if CONFIG_USING_DRIVER_SERIAL
 # if !CONFIG_USING_UART0 && !CONFIG_USING_UART1
 #  error "CONFIG_USING_UARTx must be enabled for Serial Driver"
+# endif
+#endif
+
+#if CONFIG_USING_DRIVER_SPI
+# if !CONFIG_USING_SPI0 && !CONFIG_USING_SPI1
+#  error "CONFIG_USING_SPIx must be enabled for SPI Driver"
 # endif
 #endif
 
@@ -201,6 +237,10 @@
 # define CONFIG_USING_FT6206            (0)
 #endif
 
+#ifndef CONFIG_USING_ST7735
+# define CONFIG_USING_ST7735            (0)
+#endif
+
 #ifndef CONFIG_USING_SPI0
 # define CONFIG_USING_SPI0              (0)
 #endif
@@ -252,15 +292,19 @@
 #endif /* CONFIG_USING_MODULE */
 
 #if (CONFIG_USING_SPISD)
-# ifndef CONFIG_SD_CS_PIN
-#  error "Please define CONFIG_SD_CS_PIN!"
-# endif
 # if (!defined(CONFIG_USING_SPI0) && !defined(CONFIG_USING_SPI1))
 #  error "Please define CONFIG_USING_SPIx!"
 # endif
 # ifndef CONFIG_SD_SPI_CHANNEL
 #  error "Please define CONFIG_SD_SPI_CHANNEL!"
 # endif
+# if (!CONFIG_USING_DRIVER_SPI)
+#  ifndef CONFIG_SD_CS_PIN
+#   error "Please define CONFIG_SD_CS_PIN!"
+#  endif
+# else /* !CONFIG_USING_DRIVER_SPI */
+#  define RT_USING_SPI_MSD
+# endif /* !CONFIG_USING_DRIVER_SPI */
 #endif /* CONFIG_USING_SPISD */
 
 #if (CONFIG_USING_ILI)
@@ -355,7 +399,7 @@
 
 /* RTT Driver COnfig */
 
-#if CONFIG_USING_DRIVER_SERIAL
+#if CONFIG_USING_DRIVER_SERIAL || CONFIG_USING_DRIVER_SPI
 # define CONFIG_USING_BSP               (1)
 #else
 # define CONFIG_USING_BSP               (0)
@@ -365,6 +409,9 @@
 #endif
 #if CONFIG_USING_DRIVER_SERIAL
 # define RT_USING_SERIAL
+#endif
+#if CONFIG_USING_DRIVER_SPI
+# define RT_USING_SPI
 #endif
 #if CONFIG_USING_DRIVER_RTC
 # define RT_USING_RTC
