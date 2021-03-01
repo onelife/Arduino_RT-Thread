@@ -127,7 +127,7 @@
 #define CONFIG_ARDUINO
 #define CONFIG_TICK_PER_SECOND          (1000)  /* Platform */
 
-#if defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD)
+#if defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD) || defined(ARDUINO_ARCH_STM32)
 # ifndef CONFIG_PRIORITY_MAX
 #  define CONFIG_PRIORITY_MAX           (3)     /* NVIC */
 # endif

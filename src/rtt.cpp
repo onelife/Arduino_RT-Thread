@@ -6,14 +6,14 @@
 #include <Arduino.h>
 #include "rtt.h"
 
-#if defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD)
+#if defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD) || defined(ARDUINO_ARCH_STM32)
 # if (CONFIG_PRIORITY_MAX > ((1 << __NVIC_PRIO_BITS) - 1))
 #  error "CONFIG_PRIORITY_MAX is more than max hardware priority level"
 # endif
 # if (CONFIG_KERNEL_PRIORITY > CONFIG_PRIORITY_MAX)
 #  error "CONFIG_KERNEL_PRIORITY can not be more than CONFIG_PRIORITY_MAX"
 # endif
-#endif /* defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD) */
+#endif /* defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD) || defined(ARDUINO_ARCH_STM32) */
 
 #if (RT_TICK_PER_SECOND > CONFIG_TICK_PER_SECOND)
 # error "RT_TICK_PER_SECOND can not be more than CONFIG_TICK_PER_SECOND"
@@ -26,13 +26,19 @@
 # define SERIAL_NAME       "Serial"
 #endif
 
-#if defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD)
+#if defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD) || defined(ARDUINO_ARCH_STM32)
 
 # define KERNEL_PRIORITY    ((CONFIG_KERNEL_PRIORITY << (8 - __NVIC_PRIO_BITS)) & 0xff)
 # define TICK_COUNT         (CONFIG_TICK_PER_SECOND / RT_TICK_PER_SECOND)
 # if (CONFIG_USING_CONSOLE)
 #  define CONSOLE_DEVICE    CONFIG_SERIAL_DEVICE
 # endif
+
+#if defined(ARDUINO_ARCH_STM32)
+# if defined(ARDUINO_NUCLEO_F767ZI)
+#  define SERIAL_IRQn       (USART3_IRQn)
+# endif
+#endif
 
 
 # if CONFIG_USING_CONSOLE
@@ -79,9 +85,9 @@ static rt_err_t arduino_serial_init(void) {
     return rt_device_register(&serial_dev, SERIAL_NAME, flag);
 }
 
-# endif /* CONFIG_USING_FINSH */
+# endif /* CONFIG_USING_CONSOLE */
 
-#endif /* defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD) */
+#endif /* defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD) || defined(ARDUINO_ARCH_STM32) */
 
 extern "C" {
     /* === Override RT-Thread Functions === */
@@ -101,12 +107,13 @@ extern "C" {
 
 #endif /* defined(RT_DEBUG) */
 
-#if defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD)
+
+#if defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD) || defined(ARDUINO_ARCH_STM32)
 
     rt_base_t rt_hw_interrupt_disable(void) {
         rt_base_t original_level;
 
-        #if defined(ARDUINO_ARCH_SAM)
+        #if defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_STM32)
             original_level = __get_BASEPRI();
             // not disable interrupt but raise base priority
             __set_BASEPRI(KERNEL_PRIORITY);
@@ -121,7 +128,7 @@ extern "C" {
     void rt_hw_interrupt_enable(rt_base_t level) {
         (void)level;
 
-        #if defined(ARDUINO_ARCH_SAM)
+        #if defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_STM32)
             // reset base priority
             __set_BASEPRI(0);
         #elif defined(ARDUINO_ARCH_SAMD)
@@ -137,7 +144,8 @@ extern "C" {
         #endif
     }
 
-    int sysTickHook(void) {
+
+    void sys_tick_isr(void) {
         static unsigned int cnt = 0;
         cnt++;
         if (cnt >= TICK_COUNT) {
@@ -153,10 +161,20 @@ extern "C" {
                 serial_dev.rx_indicate(&serial_dev, CONSOLE_DEVICE.available());
             }
         #endif
-        return 0;
     }
 
-#endif /* defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD) */
+    #if defined(ARDUINO_ARCH_STM32)
+        void HAL_SYSTICK_Callback(void) {
+            sys_tick_isr();
+        }
+    #else
+        int sysTickHook(void) {
+            sys_tick_isr();
+            return 0;
+        }
+    #endif
+
+#endif /* defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD) || defined(ARDUINO_ARCH_STM32) */
 } /* extern "C" */
 
 
@@ -417,12 +435,14 @@ void RT_Thread::begin(void) {
         NVIC_SetPriority(UART_IRQn, CONFIG_PRIORITY_MAX);
     #elif defined(ARDUINO_ARCH_SAMD)
         NVIC_SetPriority(USB_IRQn, CONFIG_PRIORITY_MAX);
+    #elif defined(ARDUINO_ARCH_STM32)
+        NVIC_SetPriority(SERIAL_IRQn, CONFIG_PRIORITY_MAX);
     #elif defined(ARDUINO_ARCH_RISCV)
         /* none */
     #else
         #warning "Unsupported architecture!"
     #endif
-    #if defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD)
+    #if defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD) || defined(ARDUINO_ARCH_STM32)
     NVIC_SetPriority(SysTick_IRQn, CONFIG_KERNEL_PRIORITY);
     NVIC_SetPriority(PendSV_IRQn, CONFIG_KERNEL_PRIORITY);
     #endif

@@ -13,7 +13,11 @@
 
 /* definitions for libc if toolchain has no these definitions */
 #include "libc/libc_stat.h"
-#include "libc/libc_errno.h"
+#if defined(CONFIG_ARDUINO) && defined(ARDUINO_ARCH_STM32)
+# include "errno.h"
+#else
+# include "libc/libc_errno.h"
+#endif
 
 #include "libc/libc_fcntl.h"
 #include "libc/libc_ioctl.h"
