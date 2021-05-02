@@ -31,7 +31,7 @@ extern "C" {
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 #ifdef RT_USING_ULOG
-# ifdef BSP_SSD_DEBUG
+# ifdef BSP_SSD1331_DEBUG
 #  define LOG_LVL                   LOG_LVL_DBG
 # else
 #  define LOG_LVL                   LOG_LVL_INFO
@@ -41,7 +41,7 @@ extern "C" {
 #else /* RT_USING_ULOG */
 # define LOG_E(format, args...)     rt_kprintf(format "\n", ##args)
 # define LOG_W                      LOG_E
-# ifdef BSP_SPI_DEBUG
+# ifdef BSP_SSD_DEBUG
 #  define LOG_D(format, args...)    rt_kprintf(format "\n", ##args)
 # else
 #  define LOG_D(format, args...)

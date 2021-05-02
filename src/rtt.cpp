@@ -34,12 +34,6 @@
 #  define CONSOLE_DEVICE    CONFIG_SERIAL_DEVICE
 # endif
 
-#if defined(ARDUINO_ARCH_STM32)
-# if defined(ARDUINO_NUCLEO_F767ZI)
-#  define SERIAL_IRQn       (USART3_IRQn)
-# endif
-#endif
-
 
 # if CONFIG_USING_CONSOLE
 /* === Map Arduino "Serial" to RT-Thread Device === */
@@ -392,7 +386,7 @@ void arduino_thread_entry(void *param) {
         #if !CONFIG_USING_DRIVER_SERIAL
             if (serialEventRun) serialEventRun();
         #endif
-        rt_thread_sleep(1);
+        rt_thread_sleep(RT_TICK_PER_SECOND / 100);
     }
 }
 
@@ -431,20 +425,10 @@ void loop(void) { rt_thread_sleep(RT_TICK_PER_SECOND); }
 /* === RT-Thread Class === */
 
 void RT_Thread::begin(void) {
-    #if defined(ARDUINO_ARCH_SAM)
-        NVIC_SetPriority(UART_IRQn, CONFIG_PRIORITY_MAX);
-    #elif defined(ARDUINO_ARCH_SAMD)
-        NVIC_SetPriority(USB_IRQn, CONFIG_PRIORITY_MAX);
-    #elif defined(ARDUINO_ARCH_STM32)
-        NVIC_SetPriority(SERIAL_IRQn, CONFIG_PRIORITY_MAX);
-    #elif defined(ARDUINO_ARCH_RISCV)
-        /* none */
-    #else
-        #warning "Unsupported architecture!"
-    #endif
     #if defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD) || defined(ARDUINO_ARCH_STM32)
     NVIC_SetPriority(SysTick_IRQn, CONFIG_KERNEL_PRIORITY);
     NVIC_SetPriority(PendSV_IRQn, CONFIG_KERNEL_PRIORITY);
+    NVIC_SetPriority(SERIAL_IRQn, CONFIG_PRIORITY_MAX);
     #endif
 
     /* disable interrupt*/

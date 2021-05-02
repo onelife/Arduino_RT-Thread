@@ -121,6 +121,12 @@
 # define CONFIG_GUI_HIGH                (64)
 #endif /* CONFIG_USING_SSD1306_SPI4 */
 
+/* STM32duino */
+#ifdef ARDUINO_ARCH_STM32
+# define CONFIG_NO_ERRNO
+# define RT_TICK_PER_SECOND             (1000)
+#endif /* ARDUINO_ARCH_STM32 */
+
 
 /* Arduino Config */
 
@@ -131,10 +137,24 @@
 # ifndef CONFIG_PRIORITY_MAX
 #  define CONFIG_PRIORITY_MAX           (3)     /* NVIC */
 # endif
-#ifndef CONFIG_KERNEL_PRIORITY
-# define CONFIG_KERNEL_PRIORITY         (2)     /* Platform */
+# ifndef CONFIG_KERNEL_PRIORITY
+#  define CONFIG_KERNEL_PRIORITY        (2)     /* Platform */
+# endif
+#endif /* defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD) || defined(ARDUINO_ARCH_STM32) */
+
+#if defined(ARDUINO_ARCH_SAM)
+# define SERIAL_IRQn                    (UART_IRQn)
+#elif defined(ARDUINO_ARCH_SAMD)
+# define SERIAL_IRQn                    (USB_IRQn)
+#elif defined(ARDUINO_ARCH_STM32)
+# if defined(ARDUINO_NUCLEO_F767ZI)
+#  define SERIAL_IRQn                   (USART3_IRQn)
+# endif
+#elif defined(ARDUINO_ARCH_RISCV)
+ /* none */
+#else
+# warning "Unsupported architecture!"
 #endif
-#endif /* defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD) */
 
 #ifndef CONFIG_HEAP_SIZE
 # ifdef ARDUINO_ARCH_SAM
@@ -353,19 +373,21 @@
 #define RT_NAME_MAX                     (16)
 #define RT_ALIGN_SIZE                   (4)
 #define RT_THREAD_PRIORITY_MAX          (32)
-#define RT_TICK_PER_SECOND              (100)
+#ifndef RT_TICK_PER_SECOND
+# define RT_TICK_PER_SECOND             (100)
+#endif
 
 
 /* Arduino Thread Config */
 
 #ifndef CONFIG_ARDUINO_STACK_SIZE
-# define CONFIG_ARDUINO_STACK_SIZE      (3 * 512)
+# define CONFIG_ARDUINO_STACK_SIZE      (4 * 512)
 #endif
 #ifndef CONFIG_ARDUINO_PRIORITY
 # define CONFIG_ARDUINO_PRIORITY        (RT_THREAD_PRIORITY_MAX >> 1)
 #endif
 #ifndef CONFIG_ARDUINO_TICK
-# define CONFIG_ARDUINO_TICK            (15)
+# define CONFIG_ARDUINO_TICK            (RT_TICK_PER_SECOND / 10)
 #endif
 
 
@@ -379,11 +401,11 @@
 /* Utility Config */
 
 #define RT_USING_DEVICE                 /* Required by IPC, DRV */
-#define RT_USING_MUTEX                  /* Required by DFS, DRV */
-#define RT_USING_SEMAPHORE              /* Required by FINSH */
+#define RT_USING_MUTEX                  /* Required by DFS, DRV, CMSIS-OS */
+#define RT_USING_SEMAPHORE              /* Required by FINSH, CMSIS-OS */
 #define RT_USING_MAILBOX                /* Required by GUI */
-// #define RT_USING_MESSAGEQUEUE           /* Required by ? */
-// #define RT_USING_EVENT                  /* Required by ? */
+// #define RT_USING_MESSAGEQUEUE           /* Required by CMSIS-OS */
+// #define RT_USING_EVENT                  /* Required by CMSIS-OS */
 // #define RT_USING_SIGNALS                /* Required by ? */
 // #define RT_USING_HOOK
 // #define RT_USING_IDLE_HOOK
@@ -391,7 +413,7 @@
 
 /* Memory Management Config */
 
-#define RT_USING_MEMPOOL                /* Required by SIG, GUI */
+#define RT_USING_MEMPOOL                /* Required by SIG, GUI, CMSIS-OS */
 // #define RT_USING_MEMHEAP
 #define RT_USING_HEAP
 #define RT_USING_SMALL_MEM

@@ -41,7 +41,7 @@ extern "C" {
 #else /* RT_USING_ULOG */
 # define LOG_E(format, args...)     rt_kprintf(format "\n", ##args)
 # define LOG_W                      LOG_E
-# ifdef BSP_SPI_DEBUG
+# ifdef BSP_ILI_DEBUG
 #  define LOG_D(format, args...)    rt_kprintf(format "\n", ##args)
 # else
 #  define LOG_D(format, args...)

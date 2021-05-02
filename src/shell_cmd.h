@@ -109,6 +109,10 @@ ADD_MSH_CMD(prtscn, capture screen, prtscn, int, int argc, char **argv)
 # endif
 #endif
 
+#if __has_include("user_cmd.h")
+# include "user_cmd.h"
+#endif
+
 
 /* Please add your commands with the following format:
 
