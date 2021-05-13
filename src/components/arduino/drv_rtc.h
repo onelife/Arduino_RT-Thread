@@ -12,7 +12,7 @@
 
 /* Exported types ------------------------------------------------------------*/
 struct bsp_rtc_contex {
-    #ifdef ARDUINO_ARCH_SAMD
+    #if defined(ARDUINO_ARCH_SAMD) || defined(ARDUINO_ARCH_STM32)
         void *ldev;         /* lower level device (Arduino RTC) */
     #endif
     struct rt_mutex lok;    /* lock */

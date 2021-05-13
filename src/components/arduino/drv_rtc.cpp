@@ -13,8 +13,14 @@ extern "C" {
 
 #include <time.h>
 #include <Arduino.h>
-#ifdef ARDUINO_ARCH_SAMD
+#if defined(ARDUINO_ARCH_SAMD)
 # include <RTCZero.h>   /* Arduino library */
+# define RTCClass RTCZero
+#elif defined(ARDUINO_ARCH_STM32)
+# include <STM32RTC.h>
+# define RTCClass STM32RTC
+# else
+#  error "No RTC library available"
 #endif
 
 extern "C" {
@@ -50,17 +56,21 @@ extern "C" {
 #endif /* RT_USING_ULOG */
 
 #define RTC_CTX()                   (&rtc_ctx)
-#ifdef ARDUINO_ARCH_SAMD
-# define RTC_DEV(ctx)               ((RTCZero *)((ctx)->ldev))
+#if defined(ARDUINO_ARCH_SAMD) || defined(ARDUINO_ARCH_STM32)
+# define RTC_DEV(ctx)               ((RTCClass *)((ctx)->ldev))
 #endif
 
 /* Private variables ---------------------------------------------------------*/
 static struct bsp_rtc_contex rtc_ctx;
-#ifdef ARDUINO_ARCH_SAMD
+#if defined(ARDUINO_ARCH_SAMD) || defined(ARDUINO_ARCH_STM32)
 }
-static RTCZero _rtc;
+# if defined(ARDUINO_ARCH_SAMD)
+static RTCClass _rtc;
+# elif defined(ARDUINO_ARCH_STM32)
+static RTCClass& _rtc = RTCClass::getInstance();
+# endif
 extern "C" {
-#endif /* ARDUINO_ARCH_SAMD */
+#endif /* defined(ARDUINO_ARCH_SAMD) || defined(ARDUINO_ARCH_STM32) */
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -115,7 +125,7 @@ static rt_err_t bsp_rtc_control(rt_device_t dev, rt_int32_t cmd, void *args) {
         switch (cmd) {
         case RT_DEVICE_CTRL_RTC_GET_TIME:
             timep = (time_t *)args;
-            #ifdef ARDUINO_ARCH_SAMD
+            #if defined(ARDUINO_ARCH_SAMD) || defined(ARDUINO_ARCH_STM32)
                 *timep = (time_t)RTC_DEV(RTC_CTX())->getEpoch();
             #endif
             ret = RT_EOK;
@@ -123,7 +133,7 @@ static rt_err_t bsp_rtc_control(rt_device_t dev, rt_int32_t cmd, void *args) {
 
         case RT_DEVICE_CTRL_RTC_SET_TIME:
             timep = (time_t *)args;
-            #ifdef ARDUINO_ARCH_SAMD
+            #if defined(ARDUINO_ARCH_SAMD) || defined(ARDUINO_ARCH_STM32)
                 RTC_DEV(RTC_CTX())->setEpoch((rt_uint32_t)*timep);
             #endif
             ret = RT_EOK;
@@ -131,21 +141,30 @@ static rt_err_t bsp_rtc_control(rt_device_t dev, rt_int32_t cmd, void *args) {
 
         case RT_DEVICE_CTRL_RTC_GET_ALARM:
             alarm = (struct rt_rtc_wkalarm *)args;
-            #ifdef ARDUINO_ARCH_SAMD
+            #if defined(ARDUINO_ARCH_SAMD)
                 alarm->enable = RT_FALSE;
-                alarm->tm_hour = RTC_DEV(RTC_CTX())->RTCZero::getAlarmHours();
-                alarm->tm_min = RTC_DEV(RTC_CTX())->RTCZero::getAlarmMinutes();
-                alarm->tm_sec = RTC_DEV(RTC_CTX())->RTCZero::getAlarmSeconds();
+                alarm->tm_hour = RTC_DEV(RTC_CTX())->RTCClass::getAlarmHours();
+                alarm->tm_min = RTC_DEV(RTC_CTX())->RTCClass::getAlarmMinutes();
+                alarm->tm_sec = RTC_DEV(RTC_CTX())->RTCClass::getAlarmSeconds();
+            #elif defined(ARDUINO_ARCH_STM32)
+                alarm->enable = RT_FALSE;
+                alarm->tm_hour = RTC_DEV(RTC_CTX())->getAlarmHours();
+                alarm->tm_min = RTC_DEV(RTC_CTX())->getAlarmMinutes();
+                alarm->tm_sec = RTC_DEV(RTC_CTX())->getAlarmSeconds();
             #endif
             ret = RT_EOK;
             break;
 
         case RT_DEVICE_CTRL_RTC_SET_ALARM:
             alarm = (struct rt_rtc_wkalarm *)args;
-            #ifdef ARDUINO_ARCH_SAMD
+            #if defined(ARDUINO_ARCH_SAMD) || defined(ARDUINO_ARCH_STM32)
                 if (!alarm->enable) {
                     RTC_DEV(RTC_CTX())->disableAlarm();
                 } else {
+                    #if defined(ARDUINO_ARCH_STM32)
+                        RTC_DEV(RTC_CTX())->setAlarmDay(
+                            RTC_DEV(RTC_CTX())->getDay());
+                    #endif
                     RTC_DEV(RTC_CTX())->setAlarmTime((rt_uint8_t)alarm->tm_hour,
                         (rt_uint8_t)alarm->tm_min, (rt_uint8_t)alarm->tm_sec);
                     RTC_DEV(RTC_CTX())->enableAlarm(
@@ -218,11 +237,14 @@ rt_err_t bsp_hw_rtc_init(void) {
     rt_err_t ret;
 
     do {
-        #ifdef ARDUINO_ARCH_SAMD
+        #if defined(ARDUINO_ARCH_SAMD) || defined(ARDUINO_ARCH_STM32)
             ret = bsp_rtc_contex_init(RTC_CTX(), RTC_NAME, &_rtc);
             if (RT_EOK != ret) break;
-
-            RTC_DEV(RTC_CTX())->begin();
+            #if defined(ARDUINO_ARCH_SAMD)
+                RTC_DEV(RTC_CTX())->begin();
+            #elif defined(ARDUINO_ARCH_STM32)
+                RTC_DEV(RTC_CTX())->begin(false);
+            #endif
         #endif
         LOG_D("[RTC] h/w init ok!");
     } while (0);

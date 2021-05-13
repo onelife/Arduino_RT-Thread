@@ -125,6 +125,7 @@
 #ifdef ARDUINO_ARCH_STM32
 # define CONFIG_NO_ERRNO
 # define RT_TICK_PER_SECOND             (1000)
+# define CONFIG_USING_DRIVER_RTC        (1)
 #endif /* ARDUINO_ARCH_STM32 */
 
 
