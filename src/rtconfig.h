@@ -125,7 +125,9 @@
 #ifdef ARDUINO_ARCH_STM32
 # define CONFIG_NO_ERRNO
 # define RT_TICK_PER_SECOND             (1000)
-# define CONFIG_USING_DRIVER_RTC        (1)
+# define CONFIG_HEAP_SIZE               (60 * 1024)
+# define CONFIG_ARDUINO_STACK_SIZE      (8 * 512)
+# define CONFIG_USING_DRIVER_RTC        (1)     /* Require STM32duino_RTC library */
 #endif /* ARDUINO_ARCH_STM32 */
 
 
@@ -158,7 +160,7 @@
 #endif
 
 #ifndef CONFIG_HEAP_SIZE
-# ifdef ARDUINO_ARCH_SAM
+#if defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_STM32)
 #  define CONFIG_HEAP_SIZE              (40 * 1024)
 # else
 #  define CONFIG_HEAP_SIZE              (20 * 1024)
