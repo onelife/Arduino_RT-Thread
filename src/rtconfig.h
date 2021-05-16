@@ -126,7 +126,7 @@
 # define CONFIG_NO_ERRNO
 # define RT_TICK_PER_SECOND             (1000)
 # define CONFIG_HEAP_SIZE               (60 * 1024)
-# define CONFIG_ARDUINO_STACK_SIZE      (8 * 512)
+# define CONFIG_ARDUINO_STACK_SIZE      (12 * 512)
 # define CONFIG_USING_DRIVER_RTC        (1)     /* Require STM32duino_RTC library */
 #endif /* ARDUINO_ARCH_STM32 */
 
@@ -495,6 +495,13 @@
 #endif
 #ifdef RT_USING_COMPONENTS_INIT
 # undef RT_USING_COMPONENTS_INIT        /* Reason: no access to linker script */
+#endif
+
+
+/* User provided config */
+
+#if __has_include("rtconfig_extra.h")
+# include "rtconfig_extra.h"
 #endif
 
 #endif /* __RTCONFIG_H__ */
