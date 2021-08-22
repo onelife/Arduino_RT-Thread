@@ -63,6 +63,7 @@ I hope this project will release the power of multitasking on Arduino platform.
 | SAM | ARM Cortex-M3 | Tested with Arduino Due |
 | SAMD | ARM Cortex-M0+ | Tested with Arduino MKRZero |
 | GD32V | Bumblebee (RV32IMAC) | Tested with Longan Nano |
+| STM32 | ARM Cortex-M7 | Tested with Nucleo-F767ZI |
 
 
 ## License  ##
