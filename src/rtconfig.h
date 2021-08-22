@@ -500,8 +500,10 @@
 
 /* User provided config */
 
-#if __has_include("rtconfig_extra.h")
-# include "rtconfig_extra.h"
+#if defined __has_include
+# if __has_include("rtconfig_extra.h")
+#  include "rtconfig_extra.h"
+# endif
 #endif
 
 #endif /* __RTCONFIG_H__ */
