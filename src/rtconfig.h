@@ -371,7 +371,8 @@
 // #define RT_DEBUG_THREAD                 (1)
 
 
-/* System Config */
+
+/* RT-Thread Kernel */
 
 #define RT_NAME_MAX                     (16)
 #define RT_ALIGN_SIZE                   (4)
@@ -379,6 +380,65 @@
 #ifndef RT_TICK_PER_SECOND
 # define RT_TICK_PER_SECOND             (100)
 #endif
+#define RT_USING_OVERFLOW_CHECK
+#define RT_USING_HOOK
+#define RT_HOOK_USING_FUNC_PTR
+#define RT_USING_IDLE_HOOK
+// #define RT_USING_TIMER_SOFT
+// #define RT_TIMER_THREAD_PRIO 4
+// #define RT_TIMER_THREAD_STACK_SIZE 512
+
+/* kservice optimization */
+
+#define RT_DEBUG
+#define RT_DEBUG_COLOR
+
+/* Inter-Thread communication */
+
+#define RT_USING_SEMAPHORE              /* Required by FINSH, CMSIS-OS */
+#define RT_USING_MUTEX                  /* Required by DFS, DRV, CMSIS-OS */
+// #define RT_USING_EVENT                  /* Required by CMSIS-OS */
+#define RT_USING_MAILBOX                /* Required by GUI */
+// #define RT_USING_MESSAGEQUEUE           /* Required by CMSIS-OS */
+// #define RT_USING_SIGNALS                /* Required by ? */
+
+/* Memory Management */
+
+#define RT_USING_MEMPOOL                /* Required by SIG, GUI, CMSIS-OS */
+#define RT_USING_SMALL_MEM
+// #define RT_USING_MEMHEAP
+// #define RT_MEMHEAP_FAST_MODE
+#define RT_USING_SMALL_MEM_AS_HEAP
+#define RT_USING_HEAP
+
+/* Kernel Device Object */
+
+#define RT_USING_DEVICE                 /* Required by IPC, DRV */
+#if (CONFIG_USING_CONSOLE)
+# define RT_USING_CONSOLE
+# define RT_CONSOLEBUF_SIZE             (128)
+#endif /* CONFIG_USING_CONSOLE */
+// #define RT_CONSOLE_DEVICE_NAME "uart"
+// #define RT_VER_NUM 0x40100
+
+/* RT-Thread Components */
+
+// #define RT_USING_USER_MAIN
+// #define RT_MAIN_THREAD_STACK_SIZE 2048
+// #define RT_MAIN_THREAD_PRIORITY 10
+#if (CONFIG_USING_FINSH)
+#define RT_USING_FINSH
+# if (CONFIG_USING_MSH)
+#  define RT_USING_MSH
+#  define FINSH_USING_MSH
+# endif
+#define FINSH_THREAD_PRIORITY           ((RT_THREAD_PRIORITY_MAX >> 1) + (RT_THREAD_PRIORITY_MAX >> 3))
+#define FINSH_THREAD_STACK_SIZE         (4 * 512)
+#define FINSH_USING_HISTORY
+#define MSH_USING_BUILT_IN_COMMANDS
+#define FINSH_USING_DESCRIPTION
+#endif /* CONFIG_USING_FINSH */
+
 
 
 /* Arduino Thread Config */
@@ -394,32 +454,10 @@
 #endif
 
 
-/* Timer Config */
-
-// #define RT_USING_TIMER_SOFT
-// #define RT_TIMER_THREAD_PRIO            (4)
-// #define RT_TIMER_THREAD_STACK_SIZE      (512)
 
 
-/* Utility Config */
-
-#define RT_USING_DEVICE                 /* Required by IPC, DRV */
-#define RT_USING_MUTEX                  /* Required by DFS, DRV, CMSIS-OS */
-#define RT_USING_SEMAPHORE              /* Required by FINSH, CMSIS-OS */
-#define RT_USING_MAILBOX                /* Required by GUI */
-// #define RT_USING_MESSAGEQUEUE           /* Required by CMSIS-OS */
-// #define RT_USING_EVENT                  /* Required by CMSIS-OS */
-// #define RT_USING_SIGNALS                /* Required by ? */
-// #define RT_USING_HOOK
-// #define RT_USING_IDLE_HOOK
 
 
-/* Memory Management Config */
-
-#define RT_USING_MEMPOOL                /* Required by SIG, GUI, CMSIS-OS */
-// #define RT_USING_MEMHEAP
-#define RT_USING_HEAP
-#define RT_USING_SMALL_MEM
 
 
 /* RTT Driver COnfig */
@@ -444,33 +482,13 @@
 #endif
 
 
-/* Console Config */
-
-#if (CONFIG_USING_CONSOLE)
-# define RT_USING_CONSOLE
-# define RT_CONSOLEBUF_SIZE             (128)
-#endif /* CONFIG_USING_CONSOLE */
-
-
-/* FinSH Config */
-
-#if (CONFIG_USING_FINSH)
-#define RT_USING_FINSH
-# if (CONFIG_USING_MSH)
-#  define FINSH_USING_MSH
-#  define FINSH_USING_MSH_ONLY
-# endif
-#define FINSH_USING_DESCRIPTION
-#define FINSH_USING_HISTORY
-#define FINSH_THREAD_PRIORITY           ((RT_THREAD_PRIORITY_MAX >> 1) + (RT_THREAD_PRIORITY_MAX >> 3))
-#define FINSH_THREAD_STACK_SIZE         (2 * 512)
-#endif /* CONFIG_USING_FINSH */
 
 
 /* File System Config */
 
 #if (CONFIG_USING_SPISD)
 # define RT_USING_DFS
+# define DFS_USING_POSIX
 // # define RT_USING_DFS_MNTTABLE          /* Mount table */
 # define RT_USING_DFS_ELMFAT
 # define DFS_USING_WORKDIR

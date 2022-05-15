@@ -6,12 +6,19 @@
 #ifndef __RTT_H__
 #define __RTT_H__
 
-#include "include/rtthread.h"
-#include "include/rthw.h"
-#ifdef RT_USING_DFS
-# include "components/dfs/include/dfs_posix.h"
+#ifdef __cplusplus
+extern "C" {
 #endif
 
+#include "include/rtthread.h"
+#include "include/rthw.h"
+
+#ifdef __cplusplus
+}
+#endif
+
+
+#ifdef __cplusplus
 
 class RT_Thread {
  public:
@@ -22,5 +29,7 @@ class RT_Thread {
 };
 
 extern RT_Thread RT_T;
+
+#endif
 
 #endif /*__RTT_H__ */

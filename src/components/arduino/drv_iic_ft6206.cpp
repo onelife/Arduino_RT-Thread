@@ -150,6 +150,8 @@ static rt_err_t ft_read_data(struct bsp_ft_contex *ctx) {
             (CONFIG_GUI_WIDTH > x) ? CONFIG_GUI_WIDTH - x : 0,
             (CONFIG_GUI_HIGH > y) ? CONFIG_GUI_HIGH - y : 0);
     }
+    (void)x;
+    (void)y;
 
     return RT_EOK;
 }

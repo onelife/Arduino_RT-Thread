@@ -11,14 +11,16 @@
 FRESULT f_seekdir(
     DIR *dj,        /* Pointer to the open directory object */
     int offset      /* the seek offset */
-) {
+)
+{
     int i = 0;
 
     if (dir_sdi(dj, 0) != FR_OK || offset < 0)
         return FR_INT_ERR;
 
-    while (i < offset) {
-        if (dir_read(dj, 0) != FR_OK || dir_next(dj, 0) != FR_OK)
+    while(i < offset)
+    {
+        if(dir_read(dj, 0) != FR_OK || dir_next(dj, 0) != FR_OK)
             return FR_INT_ERR;
         i++;
     }
@@ -28,11 +30,14 @@ FRESULT f_seekdir(
 
 #if FF_VOLUMES > 1
 
-int elm_get_vol(FATFS *fat) {
-    unsigned int vol;
+int elm_get_vol(FATFS *fat)
+{
+    int vol;
 
     for (vol = 0; vol < FF_VOLUMES; vol ++)
+    {
         if (FatFs[vol] == fat) return vol;
+    }
 
     return -1;
 }

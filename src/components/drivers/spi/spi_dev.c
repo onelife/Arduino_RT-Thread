@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2018, RT-Thread Development Team
+ * Copyright (c) 2006-2021, RT-Thread Development Team
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -7,8 +7,8 @@
  * Date           Author       Notes
  */
 
-// #include <rtthread.h>
-#include "components/drivers/include/rtdevice.h"
+#include "include/rtthread.h"
+#include "components/drivers/include/drivers/spi.h"
 
 #ifdef RT_USING_SPI
 
@@ -50,7 +50,7 @@ static rt_err_t _spi_bus_device_control(rt_device_t dev,
     {
     case 0: /* set device */
         break;
-    case 1: 
+    case 1:
         break;
     }
 
@@ -58,7 +58,7 @@ static rt_err_t _spi_bus_device_control(rt_device_t dev,
 }
 
 #ifdef RT_USING_DEVICE_OPS
-const static struct rt_device_ops spi_bus_ops = 
+const static struct rt_device_ops spi_bus_ops =
 {
     RT_NULL,
     RT_NULL,
@@ -131,7 +131,7 @@ static rt_err_t _spidev_device_control(rt_device_t dev,
     {
     case 0: /* set device */
         break;
-    case 1: 
+    case 1:
         break;
     }
 
@@ -139,7 +139,7 @@ static rt_err_t _spidev_device_control(rt_device_t dev,
 }
 
 #ifdef RT_USING_DEVICE_OPS
-const static struct rt_device_ops spi_device_ops = 
+const static struct rt_device_ops spi_device_ops =
 {
     RT_NULL,
     RT_NULL,

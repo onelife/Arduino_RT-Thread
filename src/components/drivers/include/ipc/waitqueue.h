@@ -1,16 +1,18 @@
 /*
- * Copyright (c) 2006-2018, RT-Thread Development Team
+ * Copyright (c) 2006-2021, RT-Thread Development Team
  *
  * SPDX-License-Identifier: Apache-2.0
  *
  * Change Logs:
  * Date           Author       Notes
- * 2018/06/26     Bernard      Fix the wait queue issue when wakeup a soon 
+ * 2018/06/26     Bernard      Fix the wait queue issue when wakeup a soon
  *                             to blocked thread.
  */
 
 #ifndef WAITQUEUE_H__
 #define WAITQUEUE_H__
+
+#include "include/rtthread.h"
 
 #define RT_WQ_FLAG_CLEAN    0x00
 #define RT_WQ_FLAG_WAKEUP   0x01

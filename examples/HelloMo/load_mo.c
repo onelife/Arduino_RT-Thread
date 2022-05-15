@@ -6,7 +6,7 @@
 #include "mo.h"
 
 int load_hello(unsigned char argc, char **argv) {
-    rt_dlmodule_t *hello;
+    struct rt_dlmodule *hello;
     int (*say_hello)(unsigned char argc, char **argv);
     char *param[2];
     (void)argc;

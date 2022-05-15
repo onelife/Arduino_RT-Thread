@@ -204,7 +204,7 @@ extern "C" {
     extern int ulog_console_backend_init(void);
     #endif
     #ifdef RT_USING_MODULE
-    # include "components/libc/libdl/dlmodule.h"
+    # include "components/libc/posix/libdl/dlmodule.h"
     #endif
     #if CONFIG_USING_BUTTON
     # include "components/arduino/drv_button.h"
@@ -370,6 +370,7 @@ void rt_components_init(void) {
 
 /* Arduino thread */
 void arduino_thread_entry(void *param) {
+    rt_uint32_t prio = CONFIG_ARDUINO_PRIORITY;
     rt_thread_t self = rt_thread_self();
     (void)param;
 
@@ -377,8 +378,7 @@ void arduino_thread_entry(void *param) {
     rt_components_init();
 
     /* reset priority */
-    rt_thread_control(self, RT_THREAD_CTRL_CHANGE_PRIORITY,
-        &self->init_priority);
+    rt_thread_control(self, RT_THREAD_CTRL_CHANGE_PRIORITY, &prio);
 
     /* run Arduino loop here */
     while (1) {
@@ -406,8 +406,7 @@ void rt_application_init(void) {
     /* raise priority */
     ret = rt_thread_startup(&arduino_thread);
     RT_ASSERT(RT_EOK == ret);
-    ret = rt_thread_control(&arduino_thread, RT_THREAD_CTRL_CHANGE_PRIORITY,
-        &tmp_prio);
+    ret = rt_thread_control(&arduino_thread, RT_THREAD_CTRL_CHANGE_PRIORITY, &tmp_prio);
     RT_ASSERT(RT_EOK == ret);
 
     (void)ret;
@@ -439,12 +438,6 @@ void RT_Thread::begin(void) {
         rt_system_heap_init((void *)&rtt_heap,
             (void *)&rtt_heap[CONFIG_HEAP_SIZE-1]);
     #endif
-
-    /* init tick */
-    rt_system_tick_init();
-
-    /* init kernel object */
-    rt_system_object_init();
 
     /* init timer */
     rt_system_timer_init();

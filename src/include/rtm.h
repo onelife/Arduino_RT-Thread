@@ -1,7 +1,10 @@
 /*
- * Copyright (c) 2006-2018, RT-Thread Development Team
+ * Copyright (c) 2006-2021, RT-Thread Development Team
  *
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * Change Logs:
+ * Date           Author       Notes
  */
 
 #ifndef __RTM_H__
@@ -11,32 +14,33 @@
 #include "rtthread.h"
 
 #ifdef RT_USING_MODULE
-struct rt_module_symtab {
+struct rt_module_symtab
+{
     void       *addr;
     const char *name;
 };
 
-# if defined(_MSC_VER)
-#  pragma section("RTMSymTab$f", read)
-#  define RTM_EXPORT(symbol)                                          \
-    __declspec(allocate("RTMSymTab$f"))const char __rtmsym_##symbol##_name[] = "__vs_rtm_"#symbol;
-#  pragma comment(linker, "/merge:RTMSymTab=mytext")
+#if defined(_MSC_VER)
+#pragma section("RTMSymTab$f",read)
+#define RTM_EXPORT(symbol)                                            \
+__declspec(allocate("RTMSymTab$f"))const char __rtmsym_##symbol##_name[] = "__vs_rtm_"#symbol;
+#pragma comment(linker, "/merge:RTMSymTab=mytext")
 
-# elif defined(__MINGW32__)
-#  define RTM_EXPORT(symbol)
+#elif defined(__MINGW32__)
+#define RTM_EXPORT(symbol)
 
-# else
-#  define RTM_EXPORT(symbol)                                          \
-    const char __rtmsym_##symbol##_name[] SECTION(".rodata.name") = #symbol; \
-    const struct rt_module_symtab __rtmsym_##symbol SECTION("RTMSymTab") = { \
+#else
+#define RTM_EXPORT(symbol)                                            \
+const char __rtmsym_##symbol##_name[] RT_SECTION(".rodata.name") = #symbol;     \
+const struct rt_module_symtab __rtmsym_##symbol RT_SECTION("RTMSymTab")= \
+{                                                                     \
     (void *)&symbol,                                                  \
     __rtmsym_##symbol##_name                                          \
 };
-# endif
+#endif
 
 #else /* RT_USING_MODULE */
 #define RTM_EXPORT(symbol)
-
 #endif /* RT_USING_MODULE */
 
 #endif /* __RTM_H__ */

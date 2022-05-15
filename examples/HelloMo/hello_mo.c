@@ -19,13 +19,13 @@ int say_hello(unsigned char argc, char **argv) {
 }
 
 void module_init(void *param) {
-    rt_dlmodule_t *self = (rt_dlmodule_t *)param;
+    struct rt_dlmodule *self = (struct rt_dlmodule *)param;
 
     rt_kprintf("%s init\n", self->parent.name);
 }
 
 void module_cleanup(void *param) {
-    rt_dlmodule_t *self = (rt_dlmodule_t *)param;
+    struct rt_dlmodule *self = (struct rt_dlmodule *)param;
 
     rt_kprintf("%s cleanup\n", self->parent.name);
 }

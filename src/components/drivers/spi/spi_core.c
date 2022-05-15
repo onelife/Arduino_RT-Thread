@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2018, RT-Thread Development Team
+ * Copyright (c) 2006-2021, RT-Thread Development Team
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -13,7 +13,7 @@
  * 2012-09-28     aozima       fixed rt_spi_release_bus assert error.
  */
 
-#include "components/drivers/include/rtdevice.h"
+#include "components/drivers/include/drivers/spi.h"
 
 #ifdef RT_USING_SPI
 
@@ -31,7 +31,7 @@ rt_err_t rt_spi_bus_register(struct rt_spi_bus       *bus,
         return result;
 
     /* initialize mutex lock */
-    rt_mutex_init(&(bus->lock), name, RT_IPC_FLAG_FIFO);
+    rt_mutex_init(&(bus->lock), name, RT_IPC_FLAG_PRIO);
     /* set ops */
     bus->ops = ops;
     /* initialize owner */
@@ -80,8 +80,8 @@ rt_err_t rt_spi_configure(struct rt_spi_device        *device,
 
     /* set configuration */
     device->config.data_width = cfg->data_width;
-    device->config.mode       = cfg->mode & RT_SPI_MODE_MASK;
-    device->config.max_hz     = cfg->max_hz;
+    device->config.mode       = cfg->mode & RT_SPI_MODE_MASK ;
+    device->config.max_hz     = cfg->max_hz ;
 
     if (device->bus != RT_NULL)
     {

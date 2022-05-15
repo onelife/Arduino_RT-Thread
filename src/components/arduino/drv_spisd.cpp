@@ -939,13 +939,15 @@ rt_err_t bsp_hw_spiSd_init(void) {
  ******************************************************************************/
 #ifdef RT_USING_FINSH
 
-rt_err_t list_sd(void) {
+int list_sd(int argc, char **argv) {
     struct bsp_sd_contex *ctx = SD_CTX();
     rt_uint8_t buf_res[16];
     struct sd_register_cid *cid = (sd_register_cid *)buf_res;
     struct rt_device_blk_geometry geometry;
     rt_uint32_t temp;
-    rt_err_t ret;
+    int ret;
+    (void)argc;
+    (void)argv;
 
     if (RT_EOK != (ret = rt_device_open(&ctx->dev, RT_DEVICE_OFLAG_RDWR))) {
         rt_kprintf("Error: open failed!\n");
@@ -1008,7 +1010,7 @@ rt_err_t list_sd(void) {
 
     return RT_EOK;
 }
-FINSH_FUNCTION_EXPORT(list_sd, show SD information.)
+MSH_CMD_EXPORT(list_sd, Show SD information.)
 #endif /* RT_USING_FINSH */
 
 /***************************************************************************//**

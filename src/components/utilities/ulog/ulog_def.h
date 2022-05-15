@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2018, RT-Thread Development Team
+ * Copyright (c) 2006-2022, RT-Thread Development Team
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -47,14 +47,16 @@ extern "C" {
 #define DBG_INFO                       LOG_LVL_INFO
 #define DBG_LOG                        LOG_LVL_DBG
 #define dbg_log(level, ...)                                \
-    if ((level) <= DBG_LEVEL)                              \
+    if ((level) <= LOG_LVL)                                \
     {                                                      \
         ulog_output(level, LOG_TAG, RT_FALSE, __VA_ARGS__);\
     }
 
 #if !defined(LOG_TAG)
     /* compatible for rtdbg */
-    #if defined(DBG_SECTION_NAME)
+    #if defined(DBG_TAG)
+        #define LOG_TAG                DBG_TAG
+    #elif defined(DBG_SECTION_NAME)
         #define LOG_TAG                DBG_SECTION_NAME
     #else
         #define LOG_TAG                "NO_TAG"
@@ -63,7 +65,9 @@ extern "C" {
 
 #if !defined(LOG_LVL)
     /* compatible for rtdbg */
-    #if defined(DBG_LEVEL)
+    #if defined(DBG_LVL)
+        #define LOG_LVL                DBG_LVL
+    #elif defined(DBG_LEVEL)
         #define LOG_LVL                DBG_LEVEL
     #else
         #define LOG_LVL                LOG_LVL_DBG
@@ -98,8 +102,8 @@ extern "C" {
     #define ulog_hex(TAG, width, buf, size)     ulog_hexdump(TAG, width, buf, size)
 #else
     #define ulog_hex(TAG, width, buf, size)
-#endif /* (LOG_LVL >= LOG_LVL_DBG) && (ULOG_OUTPUT_LVL >= LOG_LVL_DBG) */    
-    
+#endif /* (LOG_LVL >= LOG_LVL_DBG) && (ULOG_OUTPUT_LVL >= LOG_LVL_DBG) */
+
 /* assert for developer. */
 #ifdef ULOG_ASSERT_ENABLE
     #define ULOG_ASSERT(EXPR)                                                 \
@@ -138,7 +142,7 @@ extern "C" {
 #define log_d                          LOG_D
 #define log_v                          LOG_D
 #define log_raw                        LOG_RAW
-#define log_hex                        LOG_HEX    
+#define log_hex                        LOG_HEX
 #define ELOG_LVL_ASSERT                LOG_LVL_ASSERT
 #define ELOG_LVL_ERROR                 LOG_LVL_ERROR
 #define ELOG_LVL_WARN                  LOG_LVL_WARNING
@@ -197,13 +201,17 @@ struct ulog_backend
 {
     char name[RT_NAME_MAX];
     rt_bool_t support_color;
+    rt_uint32_t out_level;
     void (*init)  (struct ulog_backend *backend);
-    void (*output)(struct ulog_backend *backend, rt_uint32_t level, const char *tag, rt_bool_t is_raw, const char *log, size_t len);
+    void (*output)(struct ulog_backend *backend, rt_uint32_t level, const char *tag, rt_bool_t is_raw, const char *log, rt_size_t len);
     void (*flush) (struct ulog_backend *backend);
     void (*deinit)(struct ulog_backend *backend);
+    /* The filter will be call before output. It will return TRUE when the filter condition is math. */
+    rt_bool_t (*filter)(struct ulog_backend *backend, rt_uint32_t level, const char *tag, rt_bool_t is_raw, const char *log, rt_size_t len);
     rt_slist_t list;
 };
 typedef struct ulog_backend *ulog_backend_t;
+typedef rt_bool_t (*ulog_backend_filter_t)(struct ulog_backend *backend, rt_uint32_t level, const char *tag, rt_bool_t is_raw, const char *log, rt_size_t len);
 
 #ifdef __cplusplus
 }

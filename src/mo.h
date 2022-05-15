@@ -13,8 +13,8 @@
 # warning "Logger module is not enabled"
 #endif
 #ifdef RT_USING_MODULE
-# include "components/libc/libdl/dlmodule.h"
-# include "components/libc/libdl/dlfcn.h"
+# include "components/libc/posix/libdl/dlmodule.h"
+# include "components/libc/posix/libdl/dlfcn.h"
 #endif
 
 #endif /*__MO_H__ */

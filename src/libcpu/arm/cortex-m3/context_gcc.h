@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2018, RT-Thread Development Team
+ * Copyright (c) 2006-2022, RT-Thread Development Team
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -22,9 +22,9 @@
     .equ    SCB_VTOR, 0xE000ED08            /* Vector Table Offset Register */
     .equ    ICSR, 0xE000ED04                /* interrupt control state register */
     .equ    PENDSVSET_BIT, 0x10000000       /* value to trigger PendSV exception */
-    
+
     .equ    SHPR3, 0xE000ED20               /* system priority register (3) */
-    .equ    PENDSV_PRI_LOWEST, 0x00FF0000   /* PendSV priority value (lowest) */
+    .equ    PENDSV_PRI_LOWEST, 0xFFFF0000   /* PendSV and SysTick priority value (lowest) */
 
 /*
  * void rt_hw_context_switch(rt_uint32 from, rt_uint32 to);
@@ -121,7 +121,7 @@ rt_hw_context_switch_to:
     MOV     R0, #1
     STR     R0, [R1]
 
-    /* set the PendSV exception priority */
+    /* set the PendSV and SysTick exception priority */
     LDR     R0, =SHPR3
     LDR     R1, =PENDSV_PRI_LOWEST
     LDR.W   R2, [R0,#0]             /* read */
@@ -142,6 +142,10 @@ rt_hw_context_switch_to:
     /* enable interrupts at processor level */
     CPSIE   F
     CPSIE   I
+
+    /* ensure PendSV exception taken place before subsequent operation */
+    DSB
+    ISB
 
     /* never reach here! */
 

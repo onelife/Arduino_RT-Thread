@@ -119,10 +119,11 @@ static const rt_uint8_t init_code[] = {
 static const struct rt_device_graphic_info disp_info = {
     .pixel_format   = RTGRAPHIC_PIXEL_FORMAT_RGB565,
     .bits_per_pixel = 16,
-    .reserved       = 0,
+    .pitch          = 0,
     .width          = CONFIG_GUI_WIDTH,
     .height         = CONFIG_GUI_HIGH,
     .framebuffer    = RT_NULL,
+    .smem_len       = 0,
 };
 
 static struct rtgui_graphic_driver_ops disp_ops = {

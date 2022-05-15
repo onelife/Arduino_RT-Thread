@@ -1,11 +1,12 @@
 /*
- * Copyright (c) 2006-2018, RT-Thread Development Team
+ * Copyright (c) 2006-2021, RT-Thread Development Team
  *
  * SPDX-License-Identifier: Apache-2.0
  *
  * Change Logs:
  * Date           Author       Notes
  * 2018/10/28     Bernard      The unify RISC-V porting code.
+ * 2020/11/20     BalanceTWK   Add FPU support
  */
 
 #include "include/rthw.h"
@@ -55,6 +56,40 @@ struct rt_hw_stack_frame
     rt_ubase_t t4;         /* x29 - t4     - temporary register 4                */
     rt_ubase_t t5;         /* x30 - t5     - temporary register 5                */
     rt_ubase_t t6;         /* x31 - t6     - temporary register 6                */
+#ifdef ARCH_RISCV_FPU
+    rv_floatreg_t f0;      /* f0  */
+    rv_floatreg_t f1;      /* f1  */
+    rv_floatreg_t f2;      /* f2  */
+    rv_floatreg_t f3;      /* f3  */
+    rv_floatreg_t f4;      /* f4  */
+    rv_floatreg_t f5;      /* f5  */
+    rv_floatreg_t f6;      /* f6  */
+    rv_floatreg_t f7;      /* f7  */
+    rv_floatreg_t f8;      /* f8  */
+    rv_floatreg_t f9;      /* f9  */
+    rv_floatreg_t f10;     /* f10 */
+    rv_floatreg_t f11;     /* f11 */
+    rv_floatreg_t f12;     /* f12 */
+    rv_floatreg_t f13;     /* f13 */
+    rv_floatreg_t f14;     /* f14 */
+    rv_floatreg_t f15;     /* f15 */
+    rv_floatreg_t f16;     /* f16 */
+    rv_floatreg_t f17;     /* f17 */
+    rv_floatreg_t f18;     /* f18 */
+    rv_floatreg_t f19;     /* f19 */
+    rv_floatreg_t f20;     /* f20 */
+    rv_floatreg_t f21;     /* f21 */
+    rv_floatreg_t f22;     /* f22 */
+    rv_floatreg_t f23;     /* f23 */
+    rv_floatreg_t f24;     /* f24 */
+    rv_floatreg_t f25;     /* f25 */
+    rv_floatreg_t f26;     /* f26 */
+    rv_floatreg_t f27;     /* f27 */
+    rv_floatreg_t f28;     /* f28 */
+    rv_floatreg_t f29;     /* f29 */
+    rv_floatreg_t f30;     /* f30 */
+    rv_floatreg_t f31;     /* f31 */
+#endif
 };
 
 /**
@@ -97,20 +132,28 @@ rt_uint8_t *rt_hw_stack_init(void       *tentry,
     return stk;
 }
 
+/*
+ * #ifdef RT_USING_SMP
+ * void rt_hw_context_switch_interrupt(void *context, rt_ubase_t from, rt_ubase_t to, struct rt_thread *to_thread);
+ * #else
+ * void rt_hw_context_switch_interrupt(rt_ubase_t from, rt_ubase_t to);
+ * #endif
+ */
 #ifndef RT_USING_SMP
-
-void rt_hw_context_switch_interrupt(rt_ubase_t from, rt_ubase_t to) {
-    if (!rt_thread_switch_interrupt_flag) {
+void rt_hw_context_switch_interrupt(rt_ubase_t from, rt_ubase_t to)
+{
+    if (rt_thread_switch_interrupt_flag == 0)
         rt_interrupt_from_thread = from;
-        rt_thread_switch_interrupt_flag = 1;
-    }
-    rt_interrupt_to_thread = to;
-}
 
+    rt_interrupt_to_thread = to;
+    rt_thread_switch_interrupt_flag = 1;
+
+    return ;
+}
 #endif /* end of RT_USING_SMP */
 
 /** shutdown CPU */
-void rt_hw_cpu_shutdown()
+RT_WEAK void rt_hw_cpu_shutdown()
 {
     rt_uint32_t level;
     rt_kprintf("shutdown...\n");

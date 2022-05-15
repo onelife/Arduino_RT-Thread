@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2018, RT-Thread Development Team
+ * Copyright (c) 2006-2021, RT-Thread Development Team
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -11,6 +11,7 @@
  * 2012-12-23   aozima      stack addr align to 8byte.
  * 2012-12-29   Bernard     Add exception hook.
  * 2013-07-09   aozima      enhancement hard fault exception handler.
+ * 2019-07-03   yangjie     add __rt_ffs() for armclang.
  */
 
 #include "include/rtthread.h"
@@ -292,7 +293,9 @@ struct exception_info
  */
 void rt_hw_hard_fault_exception(struct exception_info * exception_info)
 {
+#if defined(RT_USING_FINSH) && defined(MSH_USING_BUILT_IN_COMMANDS)
     extern long list_thread(void);
+#endif
     struct stack_frame* context = &exception_info->stack_frame;
 
     if (rt_exception_hook != RT_NULL)
@@ -326,9 +329,9 @@ void rt_hw_hard_fault_exception(struct exception_info * exception_info)
     {
         rt_kprintf("hard fault on thread: %s\r\n\r\n", rt_thread_self()->name);
 
-#ifdef RT_USING_FINSH
+#if defined(RT_USING_FINSH) && defined(MSH_USING_BUILT_IN_COMMANDS)
         list_thread();
-#endif /* RT_USING_FINSH */
+#endif
     }
     else
     {
@@ -345,7 +348,7 @@ void rt_hw_hard_fault_exception(struct exception_info * exception_info)
 /**
  * shutdown CPU
  */
-void rt_hw_cpu_shutdown(void)
+RT_WEAK void rt_hw_cpu_shutdown(void)
 {
     rt_kprintf("shutdown...\n");
 
@@ -383,6 +386,24 @@ __asm int __rt_ffs(int value)
 
 exit
     BX      lr
+}
+#elif defined(__clang__)
+int __rt_ffs(int value)
+{
+    __asm volatile(
+        "CMP     r0, #0x00            \n"
+        "BEQ     1f                   \n"
+
+        "RBIT    r0, r0               \n"
+        "CLZ     r0, r0               \n"
+        "ADDS    r0, r0, #0x01        \n"
+
+        "1:                           \n"
+
+        : "=r"(value)
+        : "r"(value)
+    );
+    return value;
 }
 #elif defined(__IAR_SYSTEMS_ICC__)
 int __rt_ffs(int value)

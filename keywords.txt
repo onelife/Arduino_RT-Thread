@@ -56,7 +56,6 @@ rt_thread_mdelay			KEYWORD2
 rt_thread_control			KEYWORD2
 rt_thread_suspend			KEYWORD2
 rt_thread_resume			KEYWORD2
-rt_thread_timeout			KEYWORD2
 rt_thread_sleep				KEYWORD2
 
 #######################################

@@ -6,66 +6,27 @@
 #include <rtt.h>
 
 /* ATTENTION
-    Please append your new shell commands and variables to "shell_cmd.h" and
-    "shell_var.h".
+    - Please enable "CONFIG_USING_FINSH" in "rtconfig.h"
+    - Please add new shell commands to "shell_cmd.h".
  */
 
 /* NOTES
-    When using FinSH without MSH (CONFIG_USING_FINSH == 1 &&
-    CONFIG_USING_MSH == 0):
-    - please append the following line to "shell_cmd.h":
-      ADD_FINSH_CMD(led, Turn on/off builtin LED, led, rt_uint32_t, rt_uint32_t id, rt_uint8_t state)
-    - and append the following 2 lines to "shell_var.h"
-      ADD_SHELL_VAR(id, LED ID, led_id, finsh_type_uint)
-      ADD_SHELL_VAR(state, LED state, led_state, finsh_type_uchar)
+    - Using "MSH_CMD_EXPORT_ALIAS" macro to export shell command with the following format:
+      MSH_CMD_EXPORT_ALIAS(function_name, command_name, command description)
+    - Using "ADD_MSH_CMD" macro to add shell command to system with the following format:
+      ADD_MSH_CMD(function_name)
+    - Please insert the following line to "shell_cmd.h":
+      ADD_MSH_CMD(led)
 
-    After uploaded, please send the following command through "Serial Monitor"
-    and observe the output:
-    led(0, 1)
-    led(0, 0)
-    led(id, state)
-    state
-    state=0
-    led(id, state)
- */
-
-/* NOTES
-    When using FinSH with MSH (default, CONFIG_USING_FINSH == 1 &&
-    CONFIG_USING_MSH == 1):
-    - please append the following line to "shell_cmd.h":
-      ADD_MSH_CMD(led, Turn on/off builtin LED, led, int, int argc, char **argv)
-    - due to MSH doesn't support shell variables, "ADD_SHELL_VAR" has no effect
-
-    After uploaded, please send the following command through "Serial Monitor"
-    and observe the output:
-    led 0, 1, 2
-    led 1, 1
-    led 0, 1
+    After uploaded, please send the following command through "Serial Monitor" and observe the output:
+    led 0 1 2
+    led 1 1
+    led 0 1
  */
 
 extern "C" {
 
-#if !CONFIG_USING_MSH
-
-  rt_uint32_t led_id = 0;
-  rt_uint32_t led_state = 1;
-
-  rt_uint32_t led(rt_uint32_t id, rt_uint32_t state) {
-    rt_kprintf("led%d=%d\n", id, state);
-    if (id != 0) {
-      return 1;
-    }
-    if (state) {
-      digitalWrite(LED_BUILTIN, HIGH);
-    } else {
-      digitalWrite(LED_BUILTIN, LOW);
-    }
-    return 0;
-  }
-
-#else /* !CONFIG_USING_MSH */
-
-  int led(int argc, char **argv) {
+  int led_set(int argc, char **argv) {
     // argc - the number of arguments
     // argv[0] - command name, e.g. "led"
     // argv[n] - nth argument in the type of char array
@@ -93,10 +54,8 @@ extern "C" {
     }
     return 0;
   }
-
-#endif
-
 }
+MSH_CMD_EXPORT_ALIAS(led_set, led, Turn on/off builtin LED.);
 
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
