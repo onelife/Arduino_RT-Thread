@@ -12,6 +12,7 @@
 // #define CONFIG_USING_TINYSCREEN
 // #define CONFIG_USING_SSD1306_SPI4
 
+
 /* Hardware Config */
 
 /* Longan Nano */
@@ -371,7 +372,6 @@
 // #define RT_DEBUG_THREAD                 (1)
 
 
-
 /* RT-Thread Kernel */
 
 #define RT_NAME_MAX                     (16)
@@ -397,7 +397,7 @@
 
 #define RT_USING_SEMAPHORE              /* Required by FINSH, CMSIS-OS */
 #define RT_USING_MUTEX                  /* Required by DFS, DRV, CMSIS-OS */
-// #define RT_USING_EVENT                  /* Required by CMSIS-OS */
+// #define RT_USING_EVENT                  /* Required by alarm, CMSIS-OS */
 #define RT_USING_MAILBOX                /* Required by GUI */
 // #define RT_USING_MESSAGEQUEUE           /* Required by CMSIS-OS */
 // #define RT_USING_SIGNALS                /* Required by ? */
@@ -440,7 +440,6 @@
 #endif /* CONFIG_USING_FINSH */
 
 
-
 /* Arduino Thread Config */
 
 #ifndef CONFIG_ARDUINO_STACK_SIZE
@@ -452,12 +451,6 @@
 #ifndef CONFIG_ARDUINO_TICK
 # define CONFIG_ARDUINO_TICK            (RT_TICK_PER_SECOND / 10)
 #endif
-
-
-
-
-
-
 
 
 /* RTT Driver COnfig */
@@ -480,8 +473,6 @@
 # define RT_USING_RTC
 # define RT_USING_ALARM
 #endif
-
-
 
 
 /* File System Config */

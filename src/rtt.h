@@ -13,6 +13,11 @@ extern "C" {
 #include "include/rtthread.h"
 #include "include/rthw.h"
 
+#ifdef DFS_USING_POSIX
+#include "components/dfs/include/dfs_file.h"
+#include "components/libc/compilers/common/extension/sys/unistd.h"
+#endif /* DFS_USING_POSIX */
+
 #ifdef __cplusplus
 }
 #endif

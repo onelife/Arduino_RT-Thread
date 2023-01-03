@@ -13,8 +13,8 @@
 #ifndef __ALARM_H__
 #define __ALARM_H__
 
+#include "include/rtdef.h"
 #include "components/libc/compilers/common/sys/time.h"
-#include <rtdef.h>
 
 #define RT_ALARM_TM_NOW        -1    /* set the alarm tm_day,tm_mon,tm_sec,etc.
                                         to now.we also call it "don't care" value */

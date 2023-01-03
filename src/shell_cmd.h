@@ -115,4 +115,4 @@ ADD_MSH_CMD(prtscn)
      MSH_CMD_EXPORT_ALIAS(led_set, toggle_led, Turn on/off builtin LED.);
      ADD_MSH_CMD(led_set)
  */
-ADD_MSH_CMD(led_set)
+// ADD_MSH_CMD(led_set)

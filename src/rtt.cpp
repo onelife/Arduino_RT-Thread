@@ -83,9 +83,10 @@ static rt_err_t arduino_serial_init(void) {
 
 #endif /* defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD) || defined(ARDUINO_ARCH_STM32) */
 
-extern "C" {
-    /* === Override RT-Thread Functions === */
 
+/* === Override RT-Thread Functions === */
+
+extern "C" {
 #if defined(RT_DEBUG)
 
     void assert_failed(uint8_t * file, uint32_t line) {

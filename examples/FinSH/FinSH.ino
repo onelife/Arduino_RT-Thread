@@ -19,9 +19,10 @@
       ADD_MSH_CMD(led)
 
     After uploaded, please send the following command through "Serial Monitor" and observe the output:
-    led 0 1 2
-    led 1 1
-    led 0 1
+    led 0 1 2  => Invalid parameter number
+    led 1 1    => Invalid LED ID
+    led 0 1    => LED0 turns on
+    led 0 0    => LED0 turns off
  */
 
 extern "C" {
@@ -54,8 +55,9 @@ extern "C" {
     }
     return 0;
   }
+
+  MSH_CMD_EXPORT_ALIAS(led_set, led, Turn on/off builtin LED.);
 }
-MSH_CMD_EXPORT_ALIAS(led_set, led, Turn on/off builtin LED.);
 
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);

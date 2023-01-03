@@ -26,10 +26,12 @@
     .equ    SHPR3, 0xE000ED20               /* system priority register (3) */
     .equ    PENDSV_PRI_LOWEST, 0xFFFF0000   /* PendSV and SysTick priority value (lowest) */
 
+    .equ    EXC_RETURN, 0x7FFFFFF
+
 /*
  * void rt_hw_context_switch(rt_uint32 from, rt_uint32 to);
- * R0 --> from
- * R1 --> to
+ * R0 --> from_thread->sp
+ * R1 --> to_thread->sp
  */
     .global rt_hw_context_switch_interrupt
     .type rt_hw_context_switch_interrupt, %function
@@ -57,8 +59,8 @@ _reswitch:
     STR     R1, [R0]
     BX      LR
 
-/* R0 --> switch from thread stack
- * R1 --> switch to thread stack
+/* R0 --> from_thread->sp
+ * R1 --> to_thread->sp
  * psr, pc, LR, R12, R3, R2, R1, R0 are pushed into [from] stack
  */
     .global pendSVHook
@@ -98,7 +100,24 @@ pendsv_exit:
     /* restore interrupt */
     MSR     PRIMASK, R2
 
-    ORR     LR, LR, #0x04
+    LDR     R2, =EXC_RETURN
+    CMP     R2, LR, LSR #5
+    BNE     check_stack
+    ORR     LR, LR, #4
+    BX      LR
+check_stack:
+    MOV     R0, SP
+    LDR     R1, [R0]
+    CMP     R2, R1, LSR #5
+    BEQ     fix_exc_return
+    ADD     R0, R0, #4
+    LDR     R1, [R0]
+    CMP     R2, R1, LSR #5
+    BNE     _pendsv_exit
+fix_exc_return:
+    ORR     R1, R1, #4
+    STR     R1, [R0]
+_pendsv_exit:
     BX      LR
 
 /*
@@ -133,11 +152,11 @@ rt_hw_context_switch_to:
     STR     R1, [R0]
 
     /* restore MSP */
-    LDR     r0, =SCB_VTOR
-    LDR     r0, [r0]
-    LDR     r0, [r0]
-    NOP
-    MSR     msp, r0
+    // LDR     r0, =SCB_VTOR
+    // LDR     r0, [r0]
+    // LDR     r0, [r0]
+    // NOP
+    // MSR     msp, r0
 
     /* enable interrupts at processor level */
     CPSIE   F

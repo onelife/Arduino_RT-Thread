@@ -29,7 +29,7 @@
 #include <delay.h>
 #endif
 #ifdef RT_USING_RTC
-#include "include/rtdevice.h"
+#include "components/drivers/include/rtdevice.h"
 #endif
 
 #define DBG_TAG    "time"
