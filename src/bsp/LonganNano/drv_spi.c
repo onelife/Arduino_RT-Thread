@@ -66,10 +66,8 @@ enum bsp_spi_channel {
 };
 
 /* Private function prototypes -----------------------------------------------*/
-static rt_err_t op_configure(struct rt_spi_device* dev,
-    struct rt_spi_configuration* cfg);
-static rt_uint32_t op_xfer(struct rt_spi_device* dev,
-    struct rt_spi_message* msg);
+static rt_err_t op_configure(struct rt_spi_device* dev, struct rt_spi_configuration* cfg);
+static rt_uint32_t op_xfer(struct rt_spi_device* dev, struct rt_spi_message* msg);
 
 /* Private constants ---------------------------------------------------------*/
 
@@ -115,15 +113,14 @@ static struct rt_spi_ops spi_ops = {
 };
 
 /* Private functions ---------------------------------------------------------*/
-static rt_err_t op_configure(struct rt_spi_device* dev,
-    struct rt_spi_configuration* cfg) {
+static rt_err_t op_configure(struct rt_spi_device* dev, struct rt_spi_configuration* cfg) {
     struct bsp_spi_contex *ctx;
     spi_parameter_struct init;
     rt_uint32_t clk;
 
     RT_ASSERT(dev != RT_NULL);
     RT_ASSERT(cfg != RT_NULL);
-    ctx = (struct bsp_spi_contex *)dev->bus->parent.user_data
+    ctx = (struct bsp_spi_contex *)dev->bus->parent.user_data;
     RT_ASSERT(ctx != RT_NULL);
     LOG_D("[SPI%d] op_configure", ctx->chn);
 
@@ -205,8 +202,7 @@ static rt_err_t op_configure(struct rt_spi_device* dev,
     return RT_EOK;
 };
 
-static rt_uint32_t op_xfer(struct rt_spi_device* dev,
-    struct rt_spi_message* msg) {
+static rt_uint32_t op_xfer(struct rt_spi_device* dev, struct rt_spi_message* msg) {
     struct bsp_spi_contex *ctx;
     struct rt_spi_configuration *cfg;
     rt_uint8_t mode3 = 0;

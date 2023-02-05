@@ -149,7 +149,7 @@ static int pipe_fops_close(struct dfs_fd *fd)
  *
  * @return   Return the operation status.
  *           When the return value is 0, it means the operation is successful.
- *           When the return value is -EINVAL, it means the command is invalid.
+ *           When the return value is -RT_EINVAL, it means the command is invalid.
  */
 static int pipe_fops_ioctl(struct dfs_fd *fd, int cmd, void *args)
 {
@@ -167,7 +167,7 @@ static int pipe_fops_ioctl(struct dfs_fd *fd, int cmd, void *args)
             *((int*)args) = rt_ringbuffer_space_len(pipe->fifo);
             break;
         default:
-            ret = -EINVAL;
+            ret = -RT_EINVAL;
             break;
     }
 
@@ -255,7 +255,7 @@ static int pipe_fops_write(struct dfs_fd *fd, const void *buf, size_t count)
     rt_pipe_t *pipe;
     int wakeup = 0;
     int ret = 0;
-    uint8_t *pbuf;
+    rt_uint8_t *pbuf;
 
     pipe = (rt_pipe_t *)fd->data;
 
@@ -268,7 +268,7 @@ static int pipe_fops_write(struct dfs_fd *fd, const void *buf, size_t count)
     if (count == 0)
         return 0;
 
-    pbuf = (uint8_t*)buf;
+    pbuf = (rt_uint8_t*)buf;
     rt_mutex_take(&pipe->lock, -1);
 
     while (1)
@@ -479,18 +479,18 @@ static rt_err_t rt_pipe_close(rt_device_t device)
  */
 static rt_size_t rt_pipe_read(rt_device_t device, rt_off_t pos, void *buffer, rt_size_t count)
 {
-    uint8_t *pbuf;
+    rt_uint8_t *pbuf;
     rt_size_t read_bytes = 0;
     rt_pipe_t *pipe = (rt_pipe_t *)device;
 
     if (device == RT_NULL)
     {
-        rt_set_errno(EINVAL);
+        rt_set_errno(RT_EINVAL);
         return 0;
     }
     if (count == 0) return 0;
 
-    pbuf = (uint8_t*)buffer;
+    pbuf = (rt_uint8_t*)buffer;
     rt_mutex_take(&(pipe->lock), RT_WAITING_FOREVER);
 
     while (read_bytes < count)
@@ -521,18 +521,18 @@ static rt_size_t rt_pipe_read(rt_device_t device, rt_off_t pos, void *buffer, rt
  */
 static rt_size_t rt_pipe_write(rt_device_t device, rt_off_t pos, const void *buffer, rt_size_t count)
 {
-    uint8_t *pbuf;
+    rt_uint8_t *pbuf;
     rt_size_t write_bytes = 0;
     rt_pipe_t *pipe = (rt_pipe_t *)device;
 
     if (device == RT_NULL)
     {
-        rt_set_errno(EINVAL);
+        rt_set_errno(RT_EINVAL);
         return 0;
     }
     if (count == 0) return 0;
 
-    pbuf = (uint8_t*)buffer;
+    pbuf = (rt_uint8_t*)buffer;
     rt_mutex_take(&pipe->lock, -1);
 
     while (write_bytes < count)

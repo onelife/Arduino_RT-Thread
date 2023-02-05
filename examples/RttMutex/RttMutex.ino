@@ -11,7 +11,7 @@
  */
 
 #define THREAD_NUM 3
-#define STACK_SIZE 256
+#define STACK_SIZE 384
 
 struct rt_mutex lock;
 
@@ -44,7 +44,7 @@ void rt_setup(void) {
 
   // dynamically initialize threads
   for (i = 0; i < THREAD_NUM; i++) {
-    name[7] = '1' + i;
+    name[7] = '0' + i;
     if (RT_NULL == (tid[i] = rt_thread_create(
         name,                       // [in] thread name
         thread_entry,               // [in] thread entry function

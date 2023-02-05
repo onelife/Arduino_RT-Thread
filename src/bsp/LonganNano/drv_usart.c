@@ -47,8 +47,7 @@ enum bsp_usart_channel {
 };
 
 /* Private function prototypes -----------------------------------------------*/
-static rt_err_t op_configure(struct rt_serial_device *serial,
-    struct serial_configure *cfg);
+static rt_err_t op_configure(struct rt_serial_device *serial, struct serial_configure *cfg);
 static rt_err_t op_control(struct rt_serial_device *serial, int cmd, void *arg);
 static int op_putc(struct rt_serial_device *serial, char ch);
 static int op_getc(struct rt_serial_device *serial);
@@ -82,8 +81,7 @@ static const struct rt_uart_ops usart_ops = {
 };
 
 /* Private functions ---------------------------------------------------------*/
-static rt_err_t op_configure(struct rt_serial_device *serial,
-    struct serial_configure *cfg) {
+static rt_err_t op_configure(struct rt_serial_device *serial, struct serial_configure *cfg) {
     struct bsp_usart_contex *ctx;
 
     RT_ASSERT(serial != RT_NULL);
@@ -163,8 +161,7 @@ static rt_err_t op_control(struct rt_serial_device *serial, int cmd, void *arg) 
         break;
 
     case RT_DEVICE_CTRL_SET_INT:
-        eclic_set_nlbits(ECLIC_GROUP_LEVEL3_PRIO1);
-        eclic_irq_enable(ctx->irq, 1, 0);
+        eclic_irq_enable(ctx->irq, 5, 1);
         /* enable receive interrupt */
         usart_interrupt_enable(ctx->usart_base, USART_INT_RBNE);
         break;

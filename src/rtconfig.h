@@ -35,7 +35,7 @@
 # define CONFIG_ST7735_RST_PIN          (GPIO_PIN_1)
 # define CONFIG_ST7735_SPI_CHANNEL      0
 
-# define CONFIG_USING_GUI               (1)
+# define CONFIG_USING_GUI               (0)
 # define CONFIG_GUI_WIDTH               (160)
 # define CONFIG_GUI_HIGH                (80)
 
@@ -328,6 +328,7 @@
 #  endif
 # else /* !CONFIG_USING_DRIVER_SPI */
 #  define RT_USING_SPI_MSD
+#  define SD_NAME                       "SD"
 # endif /* !CONFIG_USING_DRIVER_SPI */
 #endif /* CONFIG_USING_SPISD */
 

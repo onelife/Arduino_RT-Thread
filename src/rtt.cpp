@@ -211,7 +211,11 @@ extern "C" {
     # include "components/arduino/drv_button.h"
     #endif
     #if CONFIG_USING_SPISD
-    # include "components/arduino/drv_spisd.h"
+    # ifndef RT_USING_SPI_MSD
+    #  include "components/arduino/drv_spisd.h"
+    # else
+    #  include "components/drivers/include/drivers/spi_msd.h"
+    # endif
     #endif
     #if CONFIG_USING_ILI
     # include "components/arduino/drv_spiili.h"
