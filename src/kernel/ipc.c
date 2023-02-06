@@ -1701,6 +1701,7 @@ RTM_EXPORT(rt_event_recv);
 rt_err_t rt_event_control(rt_event_t event, int cmd, void *arg)
 {
     rt_ubase_t level;
+    (void)arg;
 
     /* parameter check */
     RT_ASSERT(event != RT_NULL);

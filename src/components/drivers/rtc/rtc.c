@@ -41,11 +41,14 @@ static rt_err_t rt_rtc_init(struct rt_device *dev)
 
 static rt_err_t rt_rtc_open(struct rt_device *dev, rt_uint16_t oflag)
 {
+    (void)dev;
+    (void)oflag;
     return RT_EOK;
 }
 
 static rt_err_t rt_rtc_close(struct rt_device *dev)
 {
+    (void)dev;
     /* Add close member function in rt_rtc_ops when need,
      * then call that function here.
      * */
@@ -273,11 +276,12 @@ rt_err_t get_timestamp(time_t *timestamp)
 }
 
 #ifdef RT_USING_FINSH
+#include <stdlib.h>
 #include "components/finsh/finsh.h"
 /**
  * get date and time or set (local timezone) [year month day hour min sec]
  */
-static void date(int argc, char **argv)
+void date(int argc, char **argv)
 {
     time_t now = (time_t)0;
 

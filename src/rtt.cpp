@@ -207,6 +207,9 @@ extern "C" {
     #ifdef RT_USING_MODULE
     # include "components/libc/posix/libdl/dlmodule.h"
     #endif
+    #if defined(RT_USING_RTC) && defined(RT_USING_ALARM)
+    # include "components/drivers/include/drivers/alarm.h"
+    #endif
     #if CONFIG_USING_BUTTON
     # include "components/arduino/drv_button.h"
     #endif
@@ -344,6 +347,9 @@ void rt_components_init(void) {
     /* INIT_PREV_EXPORT */
     #ifdef RT_USING_DFS
         (void)dfs_init();
+    #endif
+    #if defined(RT_USING_RTC) && defined(RT_USING_ALARM)
+        (void)rt_alarm_system_init();
     #endif
 
     /* INIT_DEVICE_EXPORT */
